@@ -19,8 +19,8 @@
   --bg-in-ms: 8000ms;
 
   /* Title uses the SAME fade as background (sync as one piece) */
-  --title-delay-ms: 10000ms;   /* keep 0 so bg+title start together */
-  --title-in-ms: 100ms;
+  --title-delay-ms: 0ms;   /* keep 0 so bg+title start together */
+  --title-in-ms: var(--bg-in-ms);
 
   /* Menu */
   --menu-delay-ms: 4550ms;    /* only used if you add transition-delay */
@@ -75,7 +75,7 @@ canvas.show{ opacity:1; }
   padding:0;
 
   /* Use the long mood-light fade here */
-  /*transition: opacity var(--bg-in-ms) cubic-bezier(0.2, 0.0, 0.2, 1);*/
+  transition: opacity var(--bg-in-ms) cubic-bezier(0.2, 0.0, 0.2, 1);
 }
 
 #titleScreen.show{
@@ -92,7 +92,7 @@ canvas.show{ opacity:1; }
   background-repeat:no-repeat;
   background-position:center;
   background-size:cover;
-  transition: opacity var(--bg-in-ms) cubic-bezier(0.2, 0.0, 0.2, 1);
+
   background-image: url('img/background.png');
 }
 
