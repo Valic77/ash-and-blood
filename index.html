@@ -57,7 +57,6 @@ canvas.show{ opacity:1; }
   opacity:1;
   pointer-events:none;
   transition: opacity var(--curtain-ms) linear var(--curtain-delay-ms);
-
 }
 #curtain.off{opacity:0;}
 
@@ -84,6 +83,14 @@ canvas.show{ opacity:1; }
   pointer-events:auto;
 }
 
+/* ✅ Instant kill-switch for title overlay (prevents fade-through during gameplay reveal) */
+#titleScreen.hard-off{
+  transition:none !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  visibility:hidden !important;
+}
+
 /* Background layer (does NOT fade separately; parent controls fade) */
 #titleScreen::before{
   content:"";
@@ -93,10 +100,8 @@ canvas.show{ opacity:1; }
   background-repeat:no-repeat;
   background-position:center;
   background-size:cover;
-
   background-image: url('img/background.png');
 }
-
 
 #titleCard{
   position:relative;
@@ -149,16 +154,6 @@ canvas.show{ opacity:1; }
 }
 .menu-btn:active{transform:scale(.99);opacity:.92;}
 
-#bootScreen{
-  position:fixed; inset:0;
-  background:#000;
-  z-index:25000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-#bootScreen.off{ display:none; }
 
 
 /* ---------------------------------------------------------------------------
@@ -272,6 +267,67 @@ canvas.show{ opacity:1; }
   opacity:.9;
   margin:12px 0;
 }
+
+/* ---------------------------------------------------------------------------
+[000.7] OPTIONS PANEL STYLES (modal textbox)
+--------------------------------------------------------------------------- */
+#optionsModal{
+  position:fixed;
+  inset:0;
+  z-index:19000;
+  display:none;
+}
+#optionsModal.show{ display:block; }
+
+#optionsModal .options-backdrop{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+}
+
+#optionsModal .options-panel{
+  position:absolute;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:min(560px, 92vw);
+  padding:18px;
+  border-radius:14px;
+  background:rgba(14,18,26,.86);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 18px 60px rgba(0,0,0,.6);
+}
+
+.options-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:12px 0;
+}
+.options-row label{
+  flex:0 0 auto;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  opacity:.95;
+}
+
+#musicVol{ flex:1 1 auto; }
+
+.options-value{
+  min-width:54px;
+  text-align:right;
+  font-weight:900;
+  letter-spacing:.06em;
+  opacity:.95;
+}
+
+.option-toggle{
+  width:96px !important;
+  margin:0 !important;
+  padding:12px 10px !important;
+}
+.option-toggle.off{ opacity:.75; }
+
 
 /* ---------------------------------------------------------------------------
 [000.8] UI: LOAD SAVE PANEL (modal textbox)
@@ -440,11 +496,33 @@ canvas.show{ opacity:1; }
   </div>
 </div>
 
+<!-- ---------------------------------------------------------------------------
+[H003] OPTIONS PANEL (textbox)
+--------------------------------------------------------------------------- -->
+<div id="optionsModal" aria-label="Options Panel">
+  <div class="options-backdrop"></div>
+
+  <div class="options-panel">
+    <div class="slot-title">OPTIONS</div>
+
+    <div class="options-row">
+      <label for="musicVol">MUSIC</label>
+      <input id="musicVol" type="range" min="0" max="100" value="50" />
+      <button id="musicToggleBtn" class="menu-btn option-toggle" type="button">ON</button>
+    </div>
+
+    <div class="options-row" style="justify-content:flex-end; margin-top:-6px;">
+      <div id="musicVolLabel" class="options-value">50%</div>
+    </div>
+
+    <button id="btnOptionsClose" class="menu-btn">CLOSE</button>
+  </div>
+</div>
 
 
 
 <!-- ---------------------------------------------------------------------------
-[H003] GAMEPLAY UI + CANVAS (hidden until game starts)
+[GX01] GAMEPLAY UI + CANVAS
 --------------------------------------------------------------------------- -->
 
 <div id="hud">
@@ -643,6 +721,64 @@ const mainMenu    = document.getElementById('mainMenu');
 const btnNew      = document.getElementById('btnNew');
 const btnOptions  = document.getElementById('btnOptions');
 
+/* OPTIONS UI (NEW) */
+const optionsModal    = document.getElementById('optionsModal');
+const optionsBackdrop = optionsModal ? optionsModal.querySelector('.options-backdrop') : null;
+const musicVol        = document.getElementById('musicVol');
+const musicVolLabel   = document.getElementById('musicVolLabel');
+const musicToggleBtn  = document.getElementById('musicToggleBtn');
+const btnOptionsClose = document.getElementById('btnOptionsClose');
+
+/* --------------------------
+   OPTIONS PANEL (NEW)
+-------------------------- */
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+function syncOptionsUI(){
+  if(!musicVol || !musicToggleBtn) return;
+
+  // These helpers are provided by [011] AUDIO
+  const enabled = (typeof getMusicEnabled === 'function') ? !!getMusicEnabled() : true;
+  const vol01   = (typeof getMusicVolume === 'function') ? +getMusicVolume() : 0.5;
+
+  const pct = clamp(Math.round(vol01 * 100), 0, 100);
+  musicVol.value = String(pct);
+  if(musicVolLabel) musicVolLabel.textContent = pct + '%';
+
+  musicToggleBtn.textContent = enabled ? 'ON' : 'OFF';
+  musicToggleBtn.classList.toggle('off', !enabled);
+}
+
+function openOptions(){
+  if(!optionsModal) return;
+  syncOptionsUI();
+  optionsModal.classList.add('show');
+}
+function closeOptions(){
+  if(!optionsModal) return;
+  optionsModal.classList.remove('show');
+}
+
+if(optionsBackdrop) optionsBackdrop.addEventListener('click', closeOptions);
+if(btnOptionsClose) btnOptionsClose.addEventListener('click', closeOptions);
+
+if(musicVol){
+  musicVol.addEventListener('input', ()=>{
+    const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
+    if(musicVolLabel) musicVolLabel.textContent = pct + '%';
+    if(typeof setMusicVolume === 'function') setMusicVolume(pct / 100);
+  });
+}
+
+if(musicToggleBtn){
+  musicToggleBtn.addEventListener('click', ()=>{
+    if(typeof setMusicEnabled === 'function' && typeof getMusicEnabled === 'function'){
+      setMusicEnabled(!getMusicEnabled());
+      syncOptionsUI();
+    }
+  });
+}
+
 /* SAVE SLOTS UI */
 const slotModal      = document.getElementById('slotModal');
 const slotBackdrop   = slotModal.querySelector('.slot-backdrop');
@@ -748,8 +884,6 @@ function rebuildSlotList(){
     const btn = document.createElement('button');
     btn.className = 'menu-btn';
 
-    // New slots: "1 ---NEW GAME---"
-    // Saved slots: "Valic" (name only)
     btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
 
     btn.addEventListener('click', ()=>{
@@ -772,25 +906,6 @@ function rebuildSlotList(){
 }
 
 /* Cinematic transition into game (fade black + fade music out) */
-function fadeOutMenuMusic(ms){
-  try{
-    if(!audioCtx || !menuGain) return;
-    const now = audioCtx.currentTime;
-
-    menuGain.gain.cancelScheduledValues(now);
-    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
-    menuGain.gain.linearRampToValueAtTime(0.0, now + (ms/1000));
-
-    if(menuSrc){
-      try{ menuSrc.stop(now + (ms/1000) + 0.05); }catch(e){}
-    }
-  }catch(e){}
-}
-
-/* ✅ BLACK HOLD rule:
-   - Fade to black + fade music out
-   - Stay black MIN 2000ms
-   - If gameplay init ever becomes async later, we can keep the curtain up until it finishes */
 function cinematicIntoGame(){
   clearTitleTimers(); // ✅ prevents title/menu from re-appearing
 
@@ -803,35 +918,33 @@ function cinematicIntoGame(){
 
   // Hide menu UI immediately
   closeSlots();
+  closeOptions();
   mainMenu.classList.remove('show');
   titleScreen.classList.remove('show');
+
+  // ✅ HARD-KILL the title overlay so gameplay can’t fade-in through it
+  titleScreen.classList.add('hard-off');
+  titleScreen.style.display = 'none';
 
   const MIN_BLACK_MS = 2000;
   const FADE_TO_BLACK_MS = 900;
 
-  // When screen should be fully black:
   const blackAt = performance.now() + FADE_TO_BLACK_MS;
 
-  // Start gameplay generation once black is reached
   setTimeout(()=>{
     let maybePromise = null;
     try{
-      maybePromise = startGameplay(); // if later you make this async, return a Promise
+      maybePromise = startGameplay();
     }catch(e){
-      // keep black if something goes wrong
       maybePromise = null;
     }
 
-    // Ensure minimum black hold, and also wait for async if used later
     const waitMinBlack = new Promise(res=>{
       const remaining = Math.max(0, (blackAt + MIN_BLACK_MS) - performance.now());
       setTimeout(res, remaining);
     });
 
-    Promise.resolve(maybePromise).then(()=>{
-      return waitMinBlack;
-    }).then(()=>{
-      // Fade black away (cinematic reveal)
+    Promise.resolve(maybePromise).then(()=>waitMinBlack).then(()=>{
       curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
       curtain.classList.add('off');
     });
@@ -878,7 +991,6 @@ btnLoadSlot.addEventListener('click', ()=>{
     return;
   }
 
-  // Later: apply "raw" to world/player/etc.
   cinematicIntoGame();
 });
 
@@ -905,21 +1017,13 @@ btnDeleteYes.addEventListener('click', ()=>{
   showPanel('slots');
 });
 
-btnDeleteNo.addEventListener('click', ()=>{
-  goBack();
-});
-
-btnConfirmClose.addEventListener('click', ()=>{
-  goBack();
-});
+btnDeleteNo.addEventListener('click', ()=>goBack());
+btnConfirmClose.addEventListener('click', ()=>goBack());
 
 /* Backdrop behavior */
 slotBackdrop.addEventListener('click', ()=>{
-  if(currentPanel === 'slots'){
-    closeSlots();
-  }else{
-    goBack();
-  }
+  if(currentPanel === 'slots') closeSlots();
+  else goBack();
 });
 
 btnSlotsClose.addEventListener('click', closeSlots);
@@ -927,12 +1031,8 @@ btnSlotsClose.addEventListener('click', closeSlots);
 /* START GAME opens slots */
 btnNew.addEventListener('click', openSlots);
 
-/* OPTIONS placeholder */
-if(btnOptions){
-  btnOptions.addEventListener('click', ()=>{
-    alert('Options coming next');
-  });
-}
+/* OPTIONS (now real) */
+if(btnOptions) btnOptions.addEventListener('click', openOptions);
 
 /* Existing title sequence (now cancellable) */
 function runTitleSequence(){
@@ -942,6 +1042,11 @@ function runTitleSequence(){
   const TITLE_HOLD_MS = 5000;
 
   curtain.classList.remove('off');
+
+  // ✅ revive title screen (we hard-killed it on game entry)
+  titleScreen.style.display = 'flex';
+  titleScreen.classList.remove('hard-off');
+
   titleScreen.classList.remove('show');
   mainMenu.classList.remove('show');
 
@@ -958,6 +1063,7 @@ function runTitleSequence(){
 
   titleTimers.push(t1);
 }
+
 
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
@@ -986,17 +1092,61 @@ function startGameplay(){
 /* FILE PATH (matches your repo structure) */
 const MENU_MUSIC_SRC = 'audio/menu.mp3';
 
-/* YOU control these */
-const MENU_MUSIC_BASE_GAIN      = 0.50;  // 0.0–1.0 (master volume)
-const MENU_MUSIC_AUDIBLE_DELAY  = 1500;   // ms after visuals begin
-const MENU_MUSIC_FADEIN_MS      = 0;  // ms fade-in duration
+/* Defaults (used if no saved options exist) */
+const MENU_MUSIC_DEFAULT_GAIN = 0.50;  // 0.0–1.0
+
+/* Settings keys (persisted) */
+const OPT_MUSIC_VOL_KEY = 'AAB_OPT_MUSIC_VOL';
+const OPT_MUSIC_ON_KEY  = 'AAB_OPT_MUSIC_ON';
 
 let audioCtx = null;
-let menuBuf = null;
-let menuSrc = null;
+let menuBuf  = null;
+let menuSrc  = null;
 let menuGain = null;
 
-/* Create / resume AudioContext ONLY on user gesture */
+let musicEnabled = true;
+let musicVolume  = MENU_MUSIC_DEFAULT_GAIN;
+
+/* --------------------------
+   Settings (global music)
+-------------------------- */
+function loadAudioPrefs(){
+  const rawOn = localStorage.getItem(OPT_MUSIC_ON_KEY);
+  if(rawOn === '0') musicEnabled = false;
+  if(rawOn === '1') musicEnabled = true;
+
+  const rawVol = localStorage.getItem(OPT_MUSIC_VOL_KEY);
+  if(rawVol != null){
+    const v = Number(rawVol);
+    if(Number.isFinite(v)) musicVolume = Math.max(0, Math.min(1, v));
+  }
+}
+function saveAudioPrefs(){
+  localStorage.setItem(OPT_MUSIC_ON_KEY, musicEnabled ? '1' : '0');
+  localStorage.setItem(OPT_MUSIC_VOL_KEY, String(musicVolume));
+}
+
+/* Exposed helpers for [009] Options panel */
+function getMusicEnabled(){ return musicEnabled; }
+function getMusicVolume(){ return musicVolume; }
+
+function setMusicEnabled(on){
+  musicEnabled = !!on;
+  saveAudioPrefs();
+  applyMenuMusicState();
+}
+
+function setMusicVolume(vol01){
+  const v = Number(vol01);
+  if(!Number.isFinite(v)) return;
+  musicVolume = Math.max(0, Math.min(1, v));
+  saveAudioPrefs();
+  applyMenuMusicState();
+}
+
+/* --------------------------
+   AudioContext + Buffer
+-------------------------- */
 function ensureAudio(){
   const AC = window.AudioContext || window.webkitAudioContext;
   if(!AC) return false;
@@ -1004,7 +1154,6 @@ function ensureAudio(){
   return true;
 }
 
-/* Load + decode once (prevents “intro cut off”) */
 async function loadMenuBuffer(){
   if(menuBuf) return;
   const res = await fetch(MENU_MUSIC_SRC, { cache:'no-store' });
@@ -1013,68 +1162,118 @@ async function loadMenuBuffer(){
   menuBuf = await audioCtx.decodeAudioData(ab);
 }
 
-/* Start playing immediately at gain=0, then fade in after delay */
-function startMenuMusic(){
+function readCssMs(varName, fallbackMs){
+  try{
+    const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    if(!v) return fallbackMs;
+    if(v.endsWith('ms')) return parseFloat(v);
+    if(v.endsWith('s'))  return parseFloat(v) * 1000;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : fallbackMs;
+  }catch(e){
+    return fallbackMs;
+  }
+}
+
+function stopMenuMusic(){
+  try{ menuSrc && menuSrc.stop(); }catch(e){}
+  menuSrc = null;
+}
+
+function scheduleMenuMusicStart(delayMs){
   if(!menuBuf) return;
 
-  // Stop existing if any (avoid overlaps)
-  try { menuSrc && menuSrc.stop(); } catch(e){}
-  menuSrc = audioCtx.createBufferSource();
-  menuSrc.buffer = menuBuf;
-  menuSrc.loop = true;
+  if(!musicEnabled){
+    stopMenuMusic();
+    return;
+  }
+
+  stopMenuMusic();
 
   if(!menuGain){
     menuGain = audioCtx.createGain();
     menuGain.connect(audioCtx.destination);
   }
 
-  // Start silent (prevents pop/crackle)
   const now = audioCtx.currentTime;
+  const startAt = now + Math.max(0, delayMs) / 1000;
+
+  menuSrc = audioCtx.createBufferSource();
+  menuSrc.buffer = menuBuf;
+  menuSrc.loop = true;
+  menuSrc.connect(menuGain);
+
   menuGain.gain.cancelScheduledValues(now);
   menuGain.gain.setValueAtTime(0.0, now);
+  menuGain.gain.setValueAtTime(0.0, startAt);
 
-  menuSrc.connect(menuGain);
-  menuSrc.start(0);
+  const target = musicEnabled ? musicVolume : 0.0;
+  menuGain.gain.linearRampToValueAtTime(target, startAt + 0.06);
 
-  // After delay, fade up smoothly (gain ramp, not HTMLAudio volume)
-  setTimeout(()=>{
-    const t0 = audioCtx.currentTime;
-    menuGain.gain.cancelScheduledValues(t0);
-    menuGain.gain.setValueAtTime(menuGain.gain.value, t0);
-    menuGain.gain.linearRampToValueAtTime(
-      MENU_MUSIC_BASE_GAIN,
-      t0 + (MENU_MUSIC_FADEIN_MS / 1000)
-    );
-  }, MENU_MUSIC_AUDIBLE_DELAY);
+  menuSrc.start(startAt);
 }
 
-/* This is called by the START button */
-async function startMenuSequence(){
-  if(!ensureAudio()) return;
+function applyMenuMusicState(){
+  if(!audioCtx) return;
 
-  try { await audioCtx.resume(); } catch(e){}
+  if(!musicEnabled){
+    stopMenuMusic();
+    if(menuGain){
+      const now = audioCtx.currentTime;
+      menuGain.gain.cancelScheduledValues(now);
+      menuGain.gain.setValueAtTime(0.0, now);
+    }
+    return;
+  }
 
-  // Remove boot screen first (optional order), then start visuals
-  const boot = document.getElementById('bootScreen');
-  if(boot) boot.classList.add('off');
-
-  // Start your title/background fade sequence (visuals begin here)
-  runTitleSequence();
-
-  // Load music (if not loaded) then start music (silent→fade)
-  try{
-    await loadMenuBuffer();
-    startMenuMusic();
-  }catch(e){
-    // If audio fails, continue visuals anyway (silent)
+  if(menuGain){
+    const now = audioCtx.currentTime;
+    menuGain.gain.cancelScheduledValues(now);
+    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
+    menuGain.gain.linearRampToValueAtTime(musicVolume, now + 0.08);
   }
 }
 
-/* Bind START button (one event is enough) */
+function fadeOutMenuMusic(ms){
+  try{
+    if(!audioCtx || !menuGain) return;
+    const now = audioCtx.currentTime;
+
+    menuGain.gain.cancelScheduledValues(now);
+    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
+    menuGain.gain.linearRampToValueAtTime(0.0, now + (ms/1000));
+
+    setTimeout(()=>stopMenuMusic(), ms + 60);
+  }catch(e){}
+}
+
+async function startMenuSequence(){
+  if(!ensureAudio()) return;
+
+  try{ await audioCtx.resume(); }catch(e){}
+
+  loadAudioPrefs();
+
+  const boot = document.getElementById('bootScreen');
+  if(boot) boot.classList.add('off');
+
+  runTitleSequence();
+
+  try{
+    await loadMenuBuffer();
+
+    const bgFadeMs = readCssMs('--bg-in-ms', 6000);
+    scheduleMenuMusicStart(bgFadeMs);
+  }catch(e){
+    // silent fail (visuals continue)
+  }
+}
+
 const bootBtn = document.getElementById('bootStartBtn');
 if(bootBtn){
   bootBtn.addEventListener('click', startMenuSequence, { once:true });
 }
+
 
 
 
