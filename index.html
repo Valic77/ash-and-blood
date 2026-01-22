@@ -174,182 +174,197 @@ canvas.show{ opacity:1; }
 }
 
 /* ---------------------------------------------------------------------------
-[000.6] SAVE SLOTS PANEL STYLES
+[000.6] SAVE SLOTS MODAL (panel UI)
 --------------------------------------------------------------------------- */
+
 #slotModal{
   position:fixed;
   inset:0;
-  z-index:18000;
-  display:none;
+  z-index:50;
 
-  /* ✅ stronger visible gutter + safe-area support */
-  padding-top:    calc(28px + env(safe-area-inset-top));
-  padding-right:  calc(28px + env(safe-area-inset-right));
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
-  padding-left:   calc(28px + env(safe-area-inset-left));
-  box-sizing:border-box;
+  /* keep it mounted so fade-out can animate */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity 220ms ease;
+
+  /* safe gutters */
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
-#slotModal.show{ display:block; }
+#slotModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #slotModal .slot-backdrop{
-  position:absolute; inset:0;
+  position:absolute;
+  inset:0;
   background:rgba(0,0,0,.55);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
 }
 
-/* All “text boxes” share this look */
+/* Center panel, but respect modal padding gutters */
 #slotModal .slot-panel{
   position:absolute;
-  left:50%; top:50%;
-  transform:translate(-50%,-50%);
+  left:0;
+  right:0;
+  top:50%;
+  transform: translateY(-50%);
+  margin:0 auto;
 
-  /* ✅ width now respects padded modal area */
-  width:min(560px, 100%);
-  box-sizing:border-box;
+  width:100%;
+  max-width:560px;
 
-  padding:18px;
-  border-radius:14px;
-  background:rgba(14,18,26,.86);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 18px 60px rgba(0,0,0,.6);
+  background:rgba(12,16,24,.78);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+  overflow:hidden;
 }
 
-/* Hide all panels by default; JS shows one at a time */
-#slotModal .slot-panel{ display:none; }
-#slotModal .slot-panel.show{ display:block; }
+#slotModal .slot-inner{
+  padding:18px 18px 16px;
+}
 
-.slot-title{
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
+#slotModal h2{
+  margin:4px 0 14px;
   text-align:center;
-  margin-bottom:12px;
-}
-
-.slot-subtitle{
+  letter-spacing:.18em;
   font-weight:800;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  text-align:center;
-  margin:10px 0 8px 0;
-  opacity:.95;
+  font-size:18px;
+  color:#e8f0ff;
 }
 
-#slotList{
+#slotModal .panel{
+  display:none;
+}
+#slotModal .panel.show{
+  display:block;
+}
+
+#slotModal .slot-list{
   display:flex;
   flex-direction:column;
-  gap:10px;
-  margin:10px 0 14px 0;
+  gap:12px;
+  margin:0;
+  padding:0;
 }
 
-#nameInput{
+#slotModal .slot-actions{
+  display:flex;
+  gap:12px;
+}
+
+#slotModal input{
   width:100%;
-  box-sizing:border-box;
   padding:14px 14px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.16);
-  background:rgba(0,0,0,.25);
-  color:#e9f0ff;
-  font-weight:800;
-  letter-spacing:.04em;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(0,0,0,.20);
+  color:#eaf0ff;
+  font-size:16px;
   outline:none;
 }
 
-/* Gives breathing room so submenu buttons aren't touching */
-.slot-row{
-  display:flex;
-  gap:14px;
-  margin:14px 0;
-}
-.slot-row .menu-btn{ width:100%; }
-
-/* Close buttons inside panels should sit below rows with spacing */
-#slotModal .slot-panel > .menu-btn{ margin-top:14px; }
-
-/* Divider: centered, same width as buttons */
-.slot-divider{
-  width:100%;
-  height:0;
-  border-top:1px dashed rgba(255,255,255,.22);
-  opacity:.9;
-  margin:12px 0;
-}
 
 
 
 
 /* ---------------------------------------------------------------------------
-[000.7] OPTIONS PANEL STYLES (modal textbox)
+[000.7] OPTIONS MODAL
 --------------------------------------------------------------------------- */
+
 #optionsModal{
   position:fixed;
   inset:0;
-  z-index:19000;
-  display:none;
+  z-index:60;
 
-  /* ✅ stronger visible gutter + safe-area support */
-  padding-top:    calc(28px + env(safe-area-inset-top));
-  padding-right:  calc(28px + env(safe-area-inset-right));
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
-  padding-left:   calc(28px + env(safe-area-inset-left));
-  box-sizing:border-box;
+  /* keep it mounted so fade-out can animate */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity 220ms ease;
+
+  /* safe gutters */
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
-#optionsModal.show{ display:block; }
+#optionsModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #optionsModal .options-backdrop{
-  position:absolute; inset:0;
+  position:absolute;
+  inset:0;
   background:rgba(0,0,0,.55);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
 }
 
+/* Center panel, but respect modal padding gutters */
 #optionsModal .options-panel{
   position:absolute;
-  left:50%; top:50%;
-  transform:translate(-50%,-50%);
+  left:0;
+  right:0;
+  top:50%;
+  transform: translateY(-50%);
+  margin:0 auto;
 
-  width:min(560px, 100%);
-  box-sizing:border-box;
+  width:100%;
+  max-width:560px;
 
-  padding:18px;
-  border-radius:14px;
-  background:rgba(14,18,26,.86);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 18px 60px rgba(0,0,0,.6);
+  background:rgba(12,16,24,.78);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+  overflow:hidden;
 }
 
-.options-row{
+#optionsModal .options-inner{
+  padding:18px 18px 16px;
+}
+
+#optionsModal h2{
+  margin:4px 0 14px;
+  text-align:center;
+  letter-spacing:.18em;
+  font-weight:800;
+  font-size:18px;
+  color:#e8f0ff;
+}
+
+#optionsModal .opt-row{
   display:flex;
   align-items:center;
   gap:12px;
   margin:12px 0;
 }
-.options-row label{
-  flex:0 0 auto;
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  opacity:.95;
+
+#optionsModal .opt-label{
+  font-weight:800;
+  letter-spacing:.12em;
+  opacity:.9;
+  min-width:70px;
 }
 
-#musicVol{ flex:1 1 auto; }
+#optionsModal input[type="range"]{
+  flex:1;
+}
 
-.options-value{
-  min-width:54px;
+#musicVolLabel{
+  min-width:48px;
   text-align:right;
-  font-weight:900;
+  font-weight:800;
   letter-spacing:.06em;
-  opacity:.95;
+  opacity:.9;
 }
 
-.option-toggle{
-  width:96px !important;
-  margin:0 !important;
-  padding:12px 10px !important;
+#musicToggleBtn.off{
+  opacity:.7;
 }
-.option-toggle.off{ opacity:.75; }
-
-
-
 
 
 /* ---------------------------------------------------------------------------
@@ -436,109 +451,173 @@ canvas.show{ opacity:1; }
 
 
 /* ---------------------------------------------------------------------------
-[000.9] CONFIRM MODAL STYLES (Apply Changes)
+[000.9] CONFIRM MODAL (apply changes?)
 --------------------------------------------------------------------------- */
+
 #confirmModal{
   position:fixed;
   inset:0;
-  z-index:20000;
-  display:none;
+  z-index:70;
 
-  /* ✅ stronger visible gutter + safe-area support */
-  padding-top:    calc(28px + env(safe-area-inset-top));
-  padding-right:  calc(28px + env(safe-area-inset-right));
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
-  padding-left:   calc(28px + env(safe-area-inset-left));
-  box-sizing:border-box;
+  /* keep it mounted so fade-out can animate */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity 220ms ease;
+
+  /* safe gutters */
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
-#confirmModal.show{ display:block; }
+#confirmModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #confirmModal .confirm-backdrop{
   position:absolute;
   inset:0;
   background:rgba(0,0,0,.55);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
 }
 
+/* Center panel, but respect modal padding gutters */
 #confirmModal .confirm-panel{
   position:absolute;
-  left:50%;
+  left:0;
+  right:0;
   top:50%;
-  transform:translate(-50%,-50%);
+  transform: translateY(-50%);
+  margin:0 auto;
 
-  width:min(560px, 100%);
-  box-sizing:border-box;
+  width:100%;
+  max-width:520px;
 
-  padding:18px;
-  border-radius:14px;
-  background:rgba(14,18,26,.86);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 18px 60px rgba(0,0,0,.6);
+  background:rgba(12,16,24,.78);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+  overflow:hidden;
 }
 
-#confirmModal .confirm-row{
-  display:flex;
-  gap:14px;
-}
-#confirmModal .confirm-row .menu-btn{ width:100%; }
-
-.confirm-msg{
+#confirmModal .confirm-inner{
+  padding:18px 18px 16px;
   text-align:center;
-  font-weight:800;
-  letter-spacing:.06em;
-  margin:10px 0 14px 0;
-  opacity:.95;
 }
+
+#confirmModal .confirm-title{
+  margin:4px 0 12px;
+  font-weight:900;
+  letter-spacing:.18em;
+  font-size:18px;
+  color:#e8f0ff;
+}
+
+#confirmModal .confirm-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin-top:14px;
+}
+
 
 
 /* ---------------------------------------------------------------------------
-[000.10] ALERT MODAL STYLES (in-game replacement for alert())
+[000.10] ALERT MODAL (replaces alert())
 --------------------------------------------------------------------------- */
+
 #alertModal{
   position:fixed;
   inset:0;
-  z-index:21000;
-  display:none;
+  z-index:75;
 
-  /* ✅ stronger visible gutter + safe-area support */
-  padding-top:    calc(28px + env(safe-area-inset-top));
-  padding-right:  calc(28px + env(safe-area-inset-right));
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
-  padding-left:   calc(28px + env(safe-area-inset-left));
-  box-sizing:border-box;
+  /* keep it mounted so fade-out can animate */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity 220ms ease;
+
+  /* safe gutters */
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
-#alertModal.show{ display:block; }
+#alertModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #alertModal .alert-backdrop{
   position:absolute;
   inset:0;
   background:rgba(0,0,0,.55);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
 }
 
+/* Center panel, but respect modal padding gutters */
 #alertModal .alert-panel{
   position:absolute;
-  left:50%;
+  left:0;
+  right:0;
   top:50%;
-  transform:translate(-50%,-50%);
+  transform: translateY(-50%);
+  margin:0 auto;
 
-  width:min(560px, 100%);
-  box-sizing:border-box;
+  width:100%;
+  max-width:520px;
 
-  padding:18px;
-  border-radius:14px;
-  background:rgba(14,18,26,.86);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 18px 60px rgba(0,0,0,.6);
+  background:rgba(12,16,24,.78);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+  overflow:hidden;
+}
+
+#alertModal .alert-inner{
+  padding:18px 18px 16px;
+  text-align:center;
+}
+
+#alertModal .alert-title{
+  margin:4px 0 10px;
+  font-weight:900;
+  letter-spacing:.18em;
+  font-size:18px;
+  color:#e8f0ff;
 }
 
 #alertModal .alert-msg{
-  text-align:center;
-  font-weight:800;
-  letter-spacing:.06em;
-  margin:10px 0 14px 0;
-  opacity:.95;
+  margin:0 0 14px;
+  opacity:.92;
+  line-height:1.35;
 }
+
+/* ---------------------------------------------------------------------------
+UI BUTTON FEEDBACK (visual press)
+(override-only: placed late so it wins)
+--------------------------------------------------------------------------- */
+
+button,
+.menu-btn,
+.menu-row button{
+  transition: transform 110ms ease, filter 110ms ease, background 110ms ease, box-shadow 110ms ease;
+}
+
+button.is-pressed,
+.menu-btn.is-pressed,
+.menu-row button.is-pressed{
+  transform: translateY(1px) scale(0.99);
+  filter: brightness(1.12);
+}
+
+button:active,
+.menu-btn:active,
+.menu-row button:active{
+  transform: translateY(1px) scale(0.99);
+  filter: brightness(1.12);
+}
+
 
 
 
@@ -657,21 +736,22 @@ canvas.show{ opacity:1; }
 </div>
 
 <!-- ---------------------------------------------------------------------------
-[H004] CONFIRM MODAL (Apply Changes)
+[H004] CONFIRM MODAL (in-game)
 --------------------------------------------------------------------------- -->
-<div id="confirmModal" aria-label="Confirm Modal">
+<div id="confirmModal" class="modal">
   <div class="confirm-backdrop"></div>
-
   <div class="confirm-panel">
-    <div class="slot-title">APPLY CHANGES?</div>
-    <div id="confirmMsg" class="confirm-msg">Apply changes?</div>
+    <div class="confirm-inner">
+      <div class="confirm-title">APPLY CHANGES?</div>
 
-    <div class="confirm-row">
-      <button id="btnConfirmNo" class="menu-btn">NO</button>
-      <button id="btnConfirmYes" class="menu-btn">YES</button>
+      <div class="confirm-actions">
+        <button id="btnConfirmNo"  class="menu-btn">NO</button>
+        <button id="btnConfirmYes" class="menu-btn">YES</button>
+      </div>
     </div>
   </div>
 </div>
+
 
 <!-- ---------------------------------------------------------------------------
 [H005] ALERT MODAL (replaces browser alert())
@@ -943,6 +1023,36 @@ function syncOptionsUI(){
   musicToggleBtn.classList.toggle('off', !on);
 }
 
+/* --------------------------
+   UI BUTTON FEEDBACK (press state + click SFX)
+-------------------------- */
+function installUIButtonFX(root=document){
+  // root can be document, element, or a single button
+  const scope = root && root.nodeType === 1 ? root : document;
+
+  let btns = [];
+  if(root && root.tagName === 'BUTTON') btns = [root];
+  else btns = Array.from(scope.querySelectorAll('button'));
+
+  for(const btn of btns){
+    if(btn.dataset.fxBound === '1') continue;
+    btn.dataset.fxBound = '1';
+
+    const pressOn  = ()=>btn.classList.add('is-pressed');
+    const pressOff = ()=>btn.classList.remove('is-pressed');
+
+    btn.addEventListener('pointerdown', pressOn, {passive:true});
+    btn.addEventListener('pointerup', pressOff, {passive:true});
+    btn.addEventListener('pointercancel', pressOff, {passive:true});
+    btn.addEventListener('pointerleave', pressOff, {passive:true});
+
+    // click SFX for every button press
+    btn.addEventListener('click', ()=>{
+      if(typeof playClickSfx === 'function') playClickSfx();
+    });
+  }
+}
+
 /* ✅ in-game confirm modal (no browser prompt) */
 function openConfirmModal(onYes, onNo){
   if(!confirmModal) return;
@@ -1182,6 +1292,9 @@ function rebuildSlotList(){
 
     slotList.appendChild(btn);
   }
+
+  // ensure press feedback + click SFX on dynamic slot buttons
+  installUIButtonFX(slotList);
 }
 
 /* Cinematic transition into game */
@@ -1247,6 +1360,8 @@ btnNameConfirm.addEventListener('click', ()=>{
     createdAt: Date.now()
   }));
 
+  if(typeof playConfirmSfx === 'function') playConfirmSfx();
+
   cinematicIntoGame();
 });
 
@@ -1266,6 +1381,8 @@ btnLoadSlot.addEventListener('click', ()=>{
     });
     return;
   }
+
+  if(typeof playConfirmSfx === 'function') playConfirmSfx();
 
   cinematicIntoGame();
 });
@@ -1307,6 +1424,9 @@ btnNew.addEventListener('click', openSlots);
 
 if(btnOptions) btnOptions.addEventListener('click', openOptions);
 
+// global button feedback for static buttons
+installUIButtonFX();
+
 /* Existing title sequence (menu delay starts when title fade begins) */
 function runTitleSequence(){
   clearTitleTimers();
@@ -1330,6 +1450,7 @@ function runTitleSequence(){
   titleTimers.push(t1);
 }
 
+
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
 --------------------------------------------------------------------------- */
@@ -1351,246 +1472,181 @@ function startGameplay(){
 }
 
 /* ---------------------------------------------------------------------------
-[011] AUDIO: BOOT SCREEN → MENU MUSIC (delay + gain fade, no pop, no cut)
+[011] AUDIO (menu music + fades)
 --------------------------------------------------------------------------- */
 
-/* FILE PATH (matches your repo structure) */
-const MENU_MUSIC_SRC = 'audio/menu.mp3';
-
-/* Defaults */
-const MENU_MUSIC_DEFAULT_GAIN = 0.50;  // 0.0–1.0
-
-/* Settings keys (persisted) */
-const OPT_MUSIC_VOL_KEY   = 'AAB_OPT_MUSIC_VOL';
-const OPT_MUSIC_LAST_KEY  = 'AAB_OPT_MUSIC_LAST'; // ✅ last non-zero
-
 let audioCtx = null;
-let menuBuf  = null;
-let menuSrc  = null;
-let menuGain = null;
+let masterGain = null;
+let musicGain = null;
 
-let musicVolume = MENU_MUSIC_DEFAULT_GAIN;       // current applied volume (0..1)
-let lastNonZeroMusicVolume = MENU_MUSIC_DEFAULT_GAIN;
+let menuMusicOsc = null;
+let menuMusicLFO = null;
 
-/* --------------------------
-   Settings (global music via volume)
--------------------------- */
-function loadAudioPrefs(){
-  const rawVol = localStorage.getItem(OPT_MUSIC_VOL_KEY);
-  if(rawVol != null){
-    const v = Number(rawVol);
-    if(Number.isFinite(v)) musicVolume = Math.max(0, Math.min(1, v));
-  }
-
-  const rawLast = localStorage.getItem(OPT_MUSIC_LAST_KEY);
-  if(rawLast != null){
-    const v = Number(rawLast);
-    if(Number.isFinite(v)) lastNonZeroMusicVolume = Math.max(0, Math.min(1, v));
-  }
-
-  // If no lastNonZero stored yet and current is >0, treat current as lastNonZero
-  if(musicVolume > 0.001) lastNonZeroMusicVolume = musicVolume;
-}
-
-function saveAudioPrefs(){
-  localStorage.setItem(OPT_MUSIC_VOL_KEY, String(musicVolume));
-  localStorage.setItem(OPT_MUSIC_LAST_KEY, String(lastNonZeroMusicVolume));
-}
-
-/* Exposed helpers for [009] Options panel */
-function getMusicVolume(){ return musicVolume; }
-
-/* Set volume (this is the real “mute”) */
-function setMusicVolume(vol01){
-  const v = Number(vol01);
-  if(!Number.isFinite(v)) return;
-
-  musicVolume = Math.max(0, Math.min(1, v));
-
-  // Track last non-zero
-  if(musicVolume > 0.001){
-    lastNonZeroMusicVolume = musicVolume;
-  }
-
-  saveAudioPrefs();
-  applyMenuMusicState();
-}
-
-/* Toggle ON/OFF:
-   OFF => volume becomes 0 (slider should show 0)
-   ON  => restore lastNonZero (or default 50% if none)
-*/
-function setMusicEnabled(on){
-  if(on){
-    const restore = (lastNonZeroMusicVolume > 0.001) ? lastNonZeroMusicVolume : MENU_MUSIC_DEFAULT_GAIN;
-    setMusicVolume(restore);
-  }else{
-    setMusicVolume(0);
-  }
-}
-
-/* --------------------------
-   AudioContext + Buffer
--------------------------- */
 function ensureAudio(){
+  if(audioCtx) return;
   const AC = window.AudioContext || window.webkitAudioContext;
-  if(!AC) return false;
-  if(!audioCtx) audioCtx = new AC();
-  return true;
+  audioCtx = new AC();
+
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 1;
+  masterGain.connect(audioCtx.destination);
+
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.5;
+  musicGain.connect(masterGain);
 }
 
-async function loadMenuBuffer(){
-  if(menuBuf) return;
-  const res = await fetch(MENU_MUSIC_SRC, { cache:'no-store' });
-  if(!res.ok) throw new Error('fetch failed: ' + res.status);
-  const ab = await res.arrayBuffer();
-  menuBuf = await audioCtx.decodeAudioData(ab);
+function setMusicVolume(v01){
+  ensureAudio();
+  const v = Math.max(0, Math.min(1, +v01 || 0));
+  if(musicGain) musicGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.02);
 }
-
-function readCssMs(varName, fallbackMs){
+function getMusicVolume(){
   try{
-    const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-    if(!v) return fallbackMs;
-    if(v.endsWith('ms')) return parseFloat(v);
-    if(v.endsWith('s'))  return parseFloat(v) * 1000;
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : fallbackMs;
+    return musicGain ? (musicGain.gain.value || 0) : 0.5;
   }catch(e){
-    return fallbackMs;
+    return 0.5;
   }
 }
 
-function stopMenuMusic(){
-  try{ menuSrc && menuSrc.stop(); }catch(e){}
-  menuSrc = null;
-}
-
-function isMenuVisible(){
-  const ts = document.getElementById('titleScreen');
-  const mm = document.getElementById('mainMenu');
-  if(!ts || !mm) return false;
-  if(ts.style.display === 'none') return false;
-  return ts.classList.contains('show') && mm.classList.contains('show');
-}
-
-/* Start menu loop (used at boot + when enabling while on menu and nothing is running) */
-function startMenuMusicNow(){
-  if(!menuBuf) return;
-
-  // Stop any existing to prevent overlap
-  stopMenuMusic();
-
-  if(!menuGain){
-    menuGain = audioCtx.createGain();
-    menuGain.connect(audioCtx.destination);
-  }
-
-  const now = audioCtx.currentTime;
-
-  menuSrc = audioCtx.createBufferSource();
-  menuSrc.buffer = menuBuf;
-  menuSrc.loop = true;
-  menuSrc.connect(menuGain);
-
-  // Pop-safe
-  menuGain.gain.cancelScheduledValues(now);
-  menuGain.gain.setValueAtTime(0.0, now);
-
-  const target = (musicVolume > 0.001) ? musicVolume : 0.0;
-  menuGain.gain.linearRampToValueAtTime(target, now + 0.06);
-
-  menuSrc.start(now);
-}
-
-/* Schedule menu music to start after bg fade finishes (first note audible at start) */
-function scheduleMenuMusicStart(delayMs){
-  if(!menuBuf) return;
-
-  // Stop existing to prevent overlaps
-  stopMenuMusic();
-
-  if(!menuGain){
-    menuGain = audioCtx.createGain();
-    menuGain.connect(audioCtx.destination);
-  }
-
-  const now = audioCtx.currentTime;
-  const startAt = now + Math.max(0, delayMs) / 1000;
-
-  menuSrc = audioCtx.createBufferSource();
-  menuSrc.buffer = menuBuf;
-  menuSrc.loop = true;
-  menuSrc.connect(menuGain);
-
-  // Start silent, ramp to current volume (or stay at 0 if muted)
-  menuGain.gain.cancelScheduledValues(now);
-  menuGain.gain.setValueAtTime(0.0, now);
-  menuGain.gain.setValueAtTime(0.0, startAt);
-
-  const target = (musicVolume > 0.001) ? musicVolume : 0.0;
-  menuGain.gain.linearRampToValueAtTime(target, startAt + 0.06);
-
-  menuSrc.start(startAt);
-}
-
-/* Apply current global music volume WITHOUT stopping the source */
-function applyMenuMusicState(){
-  if(!audioCtx) return;
-
-  // If we're on menu, have buffer, and music should be audible but nothing is playing, start it.
-  if(menuBuf && !menuSrc && isMenuVisible()){
-    startMenuMusicNow();
-  }
-
-  if(menuGain){
-    const now = audioCtx.currentTime;
-    const target = (musicVolume > 0.001) ? musicVolume : 0.0;
-
-    menuGain.gain.cancelScheduledValues(now);
-    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
-    menuGain.gain.linearRampToValueAtTime(target, now + 0.08);
+function setMusicEnabled(on){
+  ensureAudio();
+  if(on){
+    startMenuMusic();
+  }else{
+    stopMenuMusic(120);
   }
 }
+function startMenuMusic(){
+  ensureAudio();
+  if(menuMusicOsc) return;
 
-/* Leaving menu => fade out and stop menu track (gameplay can start its own music later) */
-function fadeOutMenuMusic(ms){
+  // gritty, minimal tension bed
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.value = 54;
+
+  const lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.18;
+
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 7.5;
+
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+
+  osc.connect(musicGain);
+
+  osc.start();
+  lfo.start();
+
+  menuMusicOsc = osc;
+  menuMusicLFO = lfo;
+}
+function stopMenuMusic(ms=180){
+  if(!audioCtx || !menuMusicOsc) return;
+
+  const t = audioCtx.currentTime;
+  const g = musicGain.gain;
+
   try{
-    if(!audioCtx || !menuGain) return;
-    const now = audioCtx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setTargetAtTime(0.0001, t, (ms/1000)/3);
+  }catch(e){}
 
-    menuGain.gain.cancelScheduledValues(now);
-    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
-    menuGain.gain.linearRampToValueAtTime(0.0, now + (ms/1000));
+  setTimeout(()=>{
+    try{ menuMusicOsc.stop(); }catch(e){}
+    try{ menuMusicLFO.stop(); }catch(e){}
+    menuMusicOsc = null;
+    menuMusicLFO = null;
 
-    setTimeout(()=>stopMenuMusic(), ms + 60);
+    // restore volume to current setting
+    const v = getMusicVolume();
+    if(musicGain) musicGain.gain.value = v;
+  }, ms + 50);
+}
+
+function fadeOutMenuMusic(ms=900){
+  ensureAudio();
+  if(!musicGain) return;
+
+  const t = audioCtx.currentTime;
+  const g = musicGain.gain;
+
+  try{
+    g.cancelScheduledValues(t);
+    g.setTargetAtTime(0.0001, t, (ms/1000)/3);
   }catch(e){}
 }
 
-async function startMenuSequence(){
-  if(!ensureAudio()) return;
+/* ---------------------------------------------------------------------------
+UI SFX (no external files; uses WebAudio)
+--------------------------------------------------------------------------- */
 
-  try{ await audioCtx.resume(); }catch(e){}
-
-  loadAudioPrefs();
-
-  const boot = document.getElementById('bootScreen');
-  if(boot) boot.classList.add('off');
-
-  runTitleSequence();
-
+function _sfxGainBase(){
+  // Keep simple for now: tie SFX loudness loosely to music volume if available.
+  let vol = 0.6;
   try{
-    await loadMenuBuffer();
-    const bgFadeMs = readCssMs('--bg-in-ms', 6000);
-    scheduleMenuMusicStart(bgFadeMs);
-  }catch(e){
-    // silent fail (visuals continue)
-  }
+    if(typeof getMusicVolume === 'function') vol = Math.max(0, Math.min(1, +getMusicVolume()));
+  }catch(e){}
+  // gain in linear space (small = safe)
+  return 0.03 + (vol * 0.05);
 }
 
-const bootBtn = document.getElementById('bootStartBtn');
-if(bootBtn){
-  bootBtn.addEventListener('click', startMenuSequence, { once:true });
+function playTone(freqHz, durMs, type='sine', gainMul=1){
+  ensureAudio();
+  if(!audioCtx) return;
+
+  const t0 = audioCtx.currentTime;
+  const dur = Math.max(0.005, (durMs||50)/1000);
+
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(Math.max(40, +freqHz||440), t0);
+
+  const g = _sfxGainBase() * Math.max(0, gainMul||1);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(g, t0 + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.01);
 }
+
+function playClickSfx(){
+  // short, crisp click (not pretty)
+  playTone(880, 32, 'square', 0.9);
+}
+
+function playConfirmSfx(){
+  // slightly longer, two-tone "confirmed" chirp
+  playTone(520, 70, 'sine', 0.9);
+  setTimeout(()=>playTone(700, 90, 'sine', 0.9), 55);
+}
+
+/* Start music on first user gesture */
+function armAudioOnFirstGesture(){
+  const arm = ()=>{
+    try{
+      ensureAudio();
+      startMenuMusic();
+    }catch(e){}
+    window.removeEventListener('pointerdown', arm);
+    window.removeEventListener('touchstart', arm);
+    window.removeEventListener('mousedown', arm);
+  };
+  window.addEventListener('pointerdown', arm, {passive:true});
+  window.addEventListener('touchstart', arm, {passive:true});
+  window.addEventListener('mousedown', arm, {passive:true});
+}
+armAudioOnFirstGesture();
+
 
 
 
