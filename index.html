@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Alien Survivor</title>
+<title>Ash and Blood</title>
+
 
 <style>
 /* ---------------------------------------------------------------------------
@@ -175,6 +176,82 @@ canvas.show{ opacity:1; }
   display:none;
 }
 
+/* ---------------------------------------------------------------------------
+[000.8] UI: LOAD SAVE PANEL (modal textbox)
+--------------------------------------------------------------------------- */
+#loadModal{
+  position:fixed;
+  inset:0;
+  z-index:26000;
+  display:none;          /* hidden by default */
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+
+#loadModal.show{ display:flex; }
+
+#loadModal .backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.62);
+}
+
+#loadModal .panel{
+  position:relative;
+  z-index:1;
+  width:min(640px, 92vw);
+  max-height:min(70vh, 620px);
+  overflow:auto;
+  border-radius:14px;
+  background:rgba(12,16,22,.88);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 22px 60px rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+  padding:16px;
+}
+
+#loadModal .title{
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin:6px 0 12px 0;
+}
+
+#saveList{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.save-item{
+  width:100%;
+  text-align:left;
+  padding:12px 12px;
+  border-radius:12px;
+  background:rgba(18,24,34,.42);
+  border:1px solid rgba(255,255,255,.16);
+  color:#e9f0ff;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.save-item:active{ transform:scale(.99); opacity:.92; }
+
+.save-empty{
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.06);
+  border:1px dashed rgba(255,255,255,.18);
+  color:rgba(233,240,255,.75);
+}
+
+#btnCloseLoad{
+  margin-top:12px;
+  width:100%;
+}
+
+
 </style>
 
 </head>
@@ -209,6 +286,22 @@ canvas.show{ opacity:1; }
 	</div>
   </div>
 </div>
+
+<!-- ---------------------------------------------------------------------------
+[H002] LOAD SAVED GAME PANEL (textbox)
+--------------------------------------------------------------------------- -->
+<div id="loadModal" aria-label="Load Saved Game Panel">
+  <div class="backdrop"></div>
+
+  <div class="panel">
+    <div class="title">LOAD SAVED GAME</div>
+
+    <div id="saveList"></div>
+
+    <button id="btnCloseLoad" class="menu-btn">CLOSE</button>
+  </div>
+</div>
+
 
 <div id="hud">
   <div class="hud-pill">HP <span id="hp">100</span></div>
@@ -397,15 +490,20 @@ function draw(){
 }
 
 /* ---------------------------------------------------------------------------
-[009] TITLE FLOW (black -> title -> menu)
+[009] TITLE FLOW (black -> title -> menu) + LOAD PANEL (modal list)
 --------------------------------------------------------------------------- */
 
-const titleScreen = document.getElementById('titleScreen');
-const curtain     = document.getElementById('curtain');
-const mainMenu    = document.getElementById('mainMenu');
-const btnNew      = document.getElementById('btnNew');
-const btnLoad     = document.getElementById('btnLoad');
-const btnOptions  = document.getElementById('btnOptions');
+const titleScreen  = document.getElementById('titleScreen');
+const curtain      = document.getElementById('curtain');
+const mainMenu     = document.getElementById('mainMenu');
+
+const btnNew       = document.getElementById('btnNew');
+const btnLoad      = document.getElementById('btnLoad');
+const btnOptions   = document.getElementById('btnOptions');
+
+const loadModal    = document.getElementById('loadModal');
+const saveList     = document.getElementById('saveList');
+const btnCloseLoad = document.getElementById('btnCloseLoad');
 
 function runTitleSequence(){
   const BLACK_HOLD_MS = 2000;
@@ -429,15 +527,67 @@ function runTitleSequence(){
   }, BLACK_HOLD_MS);
 }
 
-/* Load Saved Game (Option A: only tells you if a save exists) */
-btnLoad.addEventListener('click', ()=>{
-  const save = localStorage.getItem('AS_SAVE_V1'); // this is the save "slot name"
-  if(!save){
-    alert('No saved game found');
-    return;
+/* -----------------------------
+   LOAD SAVED GAME PANEL
+------------------------------ */
+function openLoadPanel(){
+  if(!loadModal || !saveList) return;
+
+  // clear list
+  saveList.innerHTML = '';
+
+  // save slots (we will use these going forward)
+  const keys = ['AS_SAVE_1','AS_SAVE_2','AS_SAVE_3'];
+  let foundAny = false;
+
+  for(const key of keys){
+    const raw = localStorage.getItem(key);
+    if(!raw) continue;
+
+    foundAny = true;
+
+    const btn = document.createElement('button');
+    btn.className = 'save-item';
+    btn.textContent = key.replace('AS_SAVE_','SAVE SLOT ');
+    btn.addEventListener('click', ()=>{
+      // real load comes later; for now this proves the list works
+      alert('Selected ' + btn.textContent);
+    });
+
+    saveList.appendChild(btn);
   }
-  alert('Saved game found (loading not added yet)');
-});
+
+  if(!foundAny){
+    const empty = document.createElement('div');
+    empty.className = 'save-empty';
+    empty.textContent = 'No saves available';
+    saveList.appendChild(empty);
+  }
+
+  loadModal.classList.add('show');
+}
+
+function closeLoadPanel(){
+  if(!loadModal) return;
+  loadModal.classList.remove('show');
+}
+
+/* Bind buttons */
+if(btnLoad){
+  btnLoad.addEventListener('click', openLoadPanel);
+}
+
+if(btnCloseLoad){
+  btnCloseLoad.addEventListener('click', closeLoadPanel);
+}
+
+if(loadModal){
+  loadModal.addEventListener('click', (e)=>{
+    const backdrop = loadModal.querySelector('.backdrop');
+    if(backdrop && e.target === backdrop) closeLoadPanel();
+  });
+}
+
 
 
 
