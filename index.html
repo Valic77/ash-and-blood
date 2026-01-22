@@ -24,7 +24,7 @@
   --title-in-ms: var(--bg-in-ms);
 
   /* Menu */
-  --menu-delay-ms: 3950ms;    /* only used if you add transition-delay */
+  --menu-delay-ms: 1050ms;    /* only used if you add transition-delay */
   --menu-in-ms: 2000ms;
 }
 
@@ -138,6 +138,7 @@ canvas.show{ opacity:1; }
 #mainMenu.show{opacity:1;pointer-events:auto;}
 
 .menu-btn{
+  display:block; /* ✅ IMPORTANT: makes centering consistent everywhere */
   width:min(520px,84vw);margin:0 auto;
   padding:14px 16px;border-radius:12px;
   background:rgba(18,24,34,.42);
@@ -158,6 +159,7 @@ canvas.show{ opacity:1; }
 }
 
 #bootScreen.off{ display:none; }
+
 
 /* ---------------------------------------------------------------------------
 [000.5] BOOT SCREEN STYLES
@@ -247,13 +249,19 @@ canvas.show{ opacity:1; }
   outline:none;
 }
 
+/* ✅ Gives breathing room so submenu buttons aren't touching */
 .slot-row{
   display:flex;
-  gap:12px;
-  margin-top:10px;
+  gap:14px;
+  margin:14px 0;
 }
 .slot-row .menu-btn{
   width:100%;
+}
+
+/* ✅ Close buttons inside panels should sit below rows with spacing */
+#slotModal .slot-panel > .menu-btn{
+  margin-top:14px;
 }
 
 /* Divider: centered, same width as buttons */
@@ -264,8 +272,6 @@ canvas.show{ opacity:1; }
   opacity:.9;
   margin:12px 0;
 }
-
-
 
 /* ---------------------------------------------------------------------------
 [000.8] UI: LOAD SAVE PANEL (modal textbox)
@@ -670,6 +676,13 @@ let selectedSlot = null;
 let currentPanel = 'slots';   // 'slots' | 'name' | 'actions' | 'confirm'
 let previousPanel = 'slots';
 
+/* Title timers (so we can cancel them when entering gameplay) */
+let titleTimers = [];
+function clearTitleTimers(){
+  for(const id of titleTimers) clearTimeout(id);
+  titleTimers = [];
+}
+
 /* Storage keys */
 function slotKey(i){ return `AAB_SLOT_${i}`; }   // slot meta (name, etc.)
 function saveKey(i){ return `AAB_SAVE_${i}`; }   // save payload
@@ -735,21 +748,18 @@ function rebuildSlotList(){
     const btn = document.createElement('button');
     btn.className = 'menu-btn';
 
-    // REQUIRED:
-    // - New slots show: "1 ---NEW GAME---"
-    // - Saved slots show: "Valic" (name only) — no "1 Valic"
+    // New slots: "1 ---NEW GAME---"
+    // Saved slots: "Valic" (name only)
     btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
 
     btn.addEventListener('click', ()=>{
       selectedSlot = i;
 
       if(nm && has){
-        // Go to ACTIONS panel
         actionTitle.textContent = nm;
         previousPanel = 'slots';
         showPanel('actions');
       }else{
-        // Go to NAME panel
         previousPanel = 'slots';
         showPanel('name');
         nameInput.value = '';
@@ -777,8 +787,14 @@ function fadeOutMenuMusic(ms){
   }catch(e){}
 }
 
+/* ✅ BLACK HOLD rule:
+   - Fade to black + fade music out
+   - Stay black MIN 2000ms
+   - If gameplay init ever becomes async later, we can keep the curtain up until it finishes */
 function cinematicIntoGame(){
-  // Make curtain fade in (black)
+  clearTitleTimers(); // ✅ prevents title/menu from re-appearing
+
+  // Make curtain fade IN (black)
   curtain.style.transition = 'opacity 900ms linear';
   curtain.classList.remove('off'); // opacity -> 1
 
@@ -790,14 +806,36 @@ function cinematicIntoGame(){
   mainMenu.classList.remove('show');
   titleScreen.classList.remove('show');
 
-  // Start gameplay after screen is black
-  setTimeout(()=>{
-    startGameplay(); // your existing function
+  const MIN_BLACK_MS = 2000;
+  const FADE_TO_BLACK_MS = 900;
 
-    // Fade black away (cinematic reveal)
-    curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
-    curtain.classList.add('off');
-  }, 950);
+  // When screen should be fully black:
+  const blackAt = performance.now() + FADE_TO_BLACK_MS;
+
+  // Start gameplay generation once black is reached
+  setTimeout(()=>{
+    let maybePromise = null;
+    try{
+      maybePromise = startGameplay(); // if later you make this async, return a Promise
+    }catch(e){
+      // keep black if something goes wrong
+      maybePromise = null;
+    }
+
+    // Ensure minimum black hold, and also wait for async if used later
+    const waitMinBlack = new Promise(res=>{
+      const remaining = Math.max(0, (blackAt + MIN_BLACK_MS) - performance.now());
+      setTimeout(res, remaining);
+    });
+
+    Promise.resolve(maybePromise).then(()=>{
+      return waitMinBlack;
+    }).then(()=>{
+      // Fade black away (cinematic reveal)
+      curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
+      curtain.classList.add('off');
+    });
+  }, FADE_TO_BLACK_MS + 50);
 }
 
 /* NAME panel actions */
@@ -810,13 +848,11 @@ btnNameConfirm.addEventListener('click', ()=>{
     return;
   }
 
-  // Save slot meta
   localStorage.setItem(slotKey(selectedSlot), JSON.stringify({
     name,
     createdAt: Date.now()
   }));
 
-  // Create starter save payload (expand later)
   localStorage.setItem(saveKey(selectedSlot), JSON.stringify({
     v: 1,
     name,
@@ -828,7 +864,7 @@ btnNameConfirm.addEventListener('click', ()=>{
 
 btnNameCancel.addEventListener('click', ()=>{
   nameInput.value = '';
-  goBack(); // back to slots
+  goBack();
 });
 
 /* ACTIONS panel actions */
@@ -836,15 +872,13 @@ btnLoadSlot.addEventListener('click', ()=>{
   if(!selectedSlot) return;
   const raw = localStorage.getItem(saveKey(selectedSlot));
   if(!raw){
-    // If it somehow has a name but no save payload, treat as empty
     alert('No saved game found');
     rebuildSlotList();
     showPanel('slots');
     return;
   }
 
-  // Later we will actually apply saved state from "raw".
-  // For now: cinematic into game confirms the flow is correct.
+  // Later: apply "raw" to world/player/etc.
   cinematicIntoGame();
 });
 
@@ -872,16 +906,14 @@ btnDeleteYes.addEventListener('click', ()=>{
 });
 
 btnDeleteNo.addEventListener('click', ()=>{
-  goBack(); // back to actions
+  goBack();
 });
 
 btnConfirmClose.addEventListener('click', ()=>{
-  goBack(); // back to actions
+  goBack();
 });
 
-/* Backdrop behavior:
-   - If you are in a sub-box: go back to previous box
-   - If you are in the main slots box: close the modal */
+/* Backdrop behavior */
 slotBackdrop.addEventListener('click', ()=>{
   if(currentPanel === 'slots'){
     closeSlots();
@@ -890,21 +922,22 @@ slotBackdrop.addEventListener('click', ()=>{
   }
 });
 
-/* Slots CLOSE closes the whole modal */
 btnSlotsClose.addEventListener('click', closeSlots);
 
 /* START GAME opens slots */
 btnNew.addEventListener('click', openSlots);
 
-/* OPTIONS placeholder for now */
+/* OPTIONS placeholder */
 if(btnOptions){
   btnOptions.addEventListener('click', ()=>{
     alert('Options coming next');
   });
 }
 
-/* Existing title sequence */
+/* Existing title sequence (now cancellable) */
 function runTitleSequence(){
+  clearTitleTimers();
+
   const BLACK_HOLD_MS = 2000;
   const TITLE_HOLD_MS = 5000;
 
@@ -912,21 +945,19 @@ function runTitleSequence(){
   titleScreen.classList.remove('show');
   mainMenu.classList.remove('show');
 
-  setTimeout(()=>{
+  const t1 = setTimeout(()=>{
     titleScreen.classList.add('show');
     curtain.classList.add('off');
 
-    setTimeout(()=>{
+    const t2 = setTimeout(()=>{
       mainMenu.classList.add('show');
     }, TITLE_HOLD_MS);
 
+    titleTimers.push(t2);
   }, BLACK_HOLD_MS);
+
+  titleTimers.push(t1);
 }
-
-
-
-
-
 
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
