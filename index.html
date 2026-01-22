@@ -721,7 +721,7 @@ const mainMenu    = document.getElementById('mainMenu');
 const btnNew      = document.getElementById('btnNew');
 const btnOptions  = document.getElementById('btnOptions');
 
-/* OPTIONS UI (NEW) */
+/* OPTIONS UI */
 const optionsModal    = document.getElementById('optionsModal');
 const optionsBackdrop = optionsModal ? optionsModal.querySelector('.options-backdrop') : null;
 const musicVol        = document.getElementById('musicVol');
@@ -730,18 +730,27 @@ const musicToggleBtn  = document.getElementById('musicToggleBtn');
 const btnOptionsClose = document.getElementById('btnOptionsClose');
 
 /* --------------------------
-   OPTIONS PANEL (NEW)
+   OPTIONS PANEL (staged apply/revert)
 -------------------------- */
 function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+let optionsDirty = false;
+let optionsSnapshot = null; // { enabled:boolean, vol:number(0..1) }
+
+function snapshotOptions(){
+  const enabled = (typeof getMusicEnabled === 'function') ? !!getMusicEnabled() : true;
+  const vol01   = (typeof getMusicVolume === 'function') ? +getMusicVolume() : 0.5;
+  optionsSnapshot = { enabled, vol: (Number.isFinite(vol01) ? vol01 : 0.5) };
+  optionsDirty = false;
+}
 
 function syncOptionsUI(){
   if(!musicVol || !musicToggleBtn) return;
 
-  // These helpers are provided by [011] AUDIO
   const enabled = (typeof getMusicEnabled === 'function') ? !!getMusicEnabled() : true;
   const vol01   = (typeof getMusicVolume === 'function') ? +getMusicVolume() : 0.5;
 
-  const pct = clamp(Math.round(vol01 * 100), 0, 100);
+  const pct = clamp(Math.round((Number.isFinite(vol01) ? vol01 : 0.5) * 100), 0, 100);
   musicVol.value = String(pct);
   if(musicVolLabel) musicVolLabel.textContent = pct + '%';
 
@@ -751,12 +760,37 @@ function syncOptionsUI(){
 
 function openOptions(){
   if(!optionsModal) return;
+  snapshotOptions();
   syncOptionsUI();
   optionsModal.classList.add('show');
 }
-function closeOptions(){
+
+function applyOrRevertThenClose(){
   if(!optionsModal) return;
+
+  if(optionsDirty){
+    const apply = window.confirm('Apply changes?');
+    if(!apply && optionsSnapshot){
+      // Revert to snapshot (and persist the revert)
+      if(typeof setMusicEnabled === 'function') setMusicEnabled(optionsSnapshot.enabled);
+      if(typeof setMusicVolume === 'function')  setMusicVolume(optionsSnapshot.vol);
+    }
+  }
+
+  optionsDirty = false;
+  optionsSnapshot = null;
+
   optionsModal.classList.remove('show');
+
+  // Ensure we’re back on title/menu (your request)
+  titleScreen.style.display = 'flex';
+  titleScreen.classList.remove('hard-off');
+  titleScreen.classList.add('show');
+  mainMenu.classList.add('show');
+}
+
+function closeOptions(){
+  applyOrRevertThenClose();
 }
 
 if(optionsBackdrop) optionsBackdrop.addEventListener('click', closeOptions);
@@ -766,14 +800,19 @@ if(musicVol){
   musicVol.addEventListener('input', ()=>{
     const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
     if(musicVolLabel) musicVolLabel.textContent = pct + '%';
-    if(typeof setMusicVolume === 'function') setMusicVolume(pct / 100);
+
+    if(typeof setMusicVolume === 'function'){
+      setMusicVolume(pct / 100); // live preview
+      optionsDirty = true;
+    }
   });
 }
 
 if(musicToggleBtn){
   musicToggleBtn.addEventListener('click', ()=>{
     if(typeof setMusicEnabled === 'function' && typeof getMusicEnabled === 'function'){
-      setMusicEnabled(!getMusicEnabled());
+      setMusicEnabled(!getMusicEnabled()); // live preview
+      optionsDirty = true;
       syncOptionsUI();
     }
   });
@@ -883,7 +922,6 @@ function rebuildSlotList(){
 
     const btn = document.createElement('button');
     btn.className = 'menu-btn';
-
     btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
 
     btn.addEventListener('click', ()=>{
@@ -907,7 +945,7 @@ function rebuildSlotList(){
 
 /* Cinematic transition into game (fade black + fade music out) */
 function cinematicIntoGame(){
-  clearTitleTimers(); // ✅ prevents title/menu from re-appearing
+  clearTitleTimers(); // prevents title/menu from re-appearing
 
   // Make curtain fade IN (black)
   curtain.style.transition = 'opacity 900ms linear';
@@ -918,17 +956,21 @@ function cinematicIntoGame(){
 
   // Hide menu UI immediately
   closeSlots();
-  closeOptions();
+  if(optionsModal && optionsModal.classList.contains('show')){
+    // if options open, close without prompting during transition
+    optionsDirty = false;
+    optionsSnapshot = null;
+    optionsModal.classList.remove('show');
+  }
   mainMenu.classList.remove('show');
   titleScreen.classList.remove('show');
 
-  // ✅ HARD-KILL the title overlay so gameplay can’t fade-in through it
+  // HARD-KILL the title overlay so gameplay can’t fade-in through it
   titleScreen.classList.add('hard-off');
   titleScreen.style.display = 'none';
 
   const MIN_BLACK_MS = 2000;
   const FADE_TO_BLACK_MS = 900;
-
   const blackAt = performance.now() + FADE_TO_BLACK_MS;
 
   setTimeout(()=>{
@@ -1031,19 +1073,18 @@ btnSlotsClose.addEventListener('click', closeSlots);
 /* START GAME opens slots */
 btnNew.addEventListener('click', openSlots);
 
-/* OPTIONS (now real) */
+/* OPTIONS opens options */
 if(btnOptions) btnOptions.addEventListener('click', openOptions);
 
-/* Existing title sequence (now cancellable) */
+/* Existing title sequence (menu delay starts when title fade begins) */
 function runTitleSequence(){
   clearTitleTimers();
 
   const BLACK_HOLD_MS = 2000;
-  const TITLE_HOLD_MS = 5000;
 
   curtain.classList.remove('off');
 
-  // ✅ revive title screen (we hard-killed it on game entry)
+  // revive title screen (we hard-killed it on game entry)
   titleScreen.style.display = 'flex';
   titleScreen.classList.remove('hard-off');
 
@@ -1051,18 +1092,17 @@ function runTitleSequence(){
   mainMenu.classList.remove('show');
 
   const t1 = setTimeout(()=>{
+    // Title fade begins NOW
     titleScreen.classList.add('show');
     curtain.classList.add('off');
 
-    const t2 = setTimeout(()=>{
-      mainMenu.classList.add('show');
-    }, TITLE_HOLD_MS);
-
-    titleTimers.push(t2);
+    // ✅ Start menu timing NOW (CSS transition-delay controls when it appears)
+    mainMenu.classList.add('show');
   }, BLACK_HOLD_MS);
 
   titleTimers.push(t1);
 }
+
 
 
 /* ---------------------------------------------------------------------------
@@ -1133,7 +1173,7 @@ function getMusicVolume(){ return musicVolume; }
 function setMusicEnabled(on){
   musicEnabled = !!on;
   saveAudioPrefs();
-  applyMenuMusicState();
+  applyMenuMusicState(); // ✅ will restart if needed
 }
 
 function setMusicVolume(vol01){
@@ -1180,6 +1220,14 @@ function stopMenuMusic(){
   menuSrc = null;
 }
 
+function isMenuVisible(){
+  const ts = document.getElementById('titleScreen');
+  const mm = document.getElementById('mainMenu');
+  if(!ts || !mm) return false;
+  if(ts.style.display === 'none') return false;
+  return ts.classList.contains('show') && mm.classList.contains('show');
+}
+
 function scheduleMenuMusicStart(delayMs){
   if(!menuBuf) return;
 
@@ -1216,6 +1264,7 @@ function scheduleMenuMusicStart(delayMs){
 function applyMenuMusicState(){
   if(!audioCtx) return;
 
+  // OFF => hard stop + zero gain
   if(!musicEnabled){
     stopMenuMusic();
     if(menuGain){
@@ -1226,6 +1275,13 @@ function applyMenuMusicState(){
     return;
   }
 
+  // ✅ If turning ON while on the menu, and nothing is playing, restart cleanly
+  if(menuBuf && !menuSrc && isMenuVisible()){
+    scheduleMenuMusicStart(0);
+    return;
+  }
+
+  // If music is running, update gain smoothly
   if(menuGain){
     const now = audioCtx.currentTime;
     menuGain.gain.cancelScheduledValues(now);
@@ -1273,6 +1329,7 @@ const bootBtn = document.getElementById('bootStartBtn');
 if(bootBtn){
   bootBtn.addEventListener('click', startMenuSequence, { once:true });
 }
+
 
 
 
