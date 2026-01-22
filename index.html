@@ -1022,10 +1022,25 @@ function playConfirmSound(){
 /* ---------------------------------------------------------------------------
 [012] BUTTON VISUAL FEEDBACK
 --------------------------------------------------------------------------- */
-.menu-btn.pressed{
-  transform:scale(.96);
-  filter:brightness(.85);
-}
+(function ensurePressedStyle(){
+  const css = `
+    .menu-btn.pressed{
+      transform:scale(.96);
+      filter:brightness(.85);
+    }
+  `.trim();
+
+  let style = document.getElementById('pressedStyle');
+  if(!style){
+    style = document.createElement('style');
+    style.id = 'pressedStyle';
+    style.textContent = css;
+    document.head.appendChild(style);
+  }else{
+    style.textContent = css;
+  }
+})();
+
 
 
 
