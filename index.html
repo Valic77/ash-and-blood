@@ -182,8 +182,8 @@ canvas.show{ opacity:1; }
   z-index:18000;
   display:none;
 
-  /* ✅ forces visible gutter on all phones */
-  padding:18px;
+  /* ✅ hard gutter from screen edge */
+  padding:24px;
   box-sizing:border-box;
 }
 #slotModal.show{ display:block; }
@@ -194,14 +194,11 @@ canvas.show{ opacity:1; }
   backdrop-filter: blur(6px);
 }
 
-/* All “text boxes” share this look */
 #slotModal .slot-panel{
   position:absolute;
   left:50%; top:50%;
   transform:translate(-50%,-50%);
-
-  /* ✅ width is now inside padded modal */
-  width:min(560px, 100%);
+  width:min(560px,100%);
   box-sizing:border-box;
 
   padding:18px;
@@ -209,77 +206,20 @@ canvas.show{ opacity:1; }
   background:rgba(14,18,26,.86);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 18px 60px rgba(0,0,0,.6);
-}
 
-/* Hide all panels by default; JS shows one at a time */
+  opacity:1;
+  transition:opacity .25s ease;
+}
+#slotModal .slot-panel.hide{ opacity:0; }
+
 #slotModal .slot-panel{ display:none; }
 #slotModal .slot-panel.show{ display:block; }
 
-.slot-title{
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  text-align:center;
-  margin-bottom:12px;
-}
-
-.slot-subtitle{
-  font-weight:800;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  text-align:center;
-  margin:10px 0 8px 0;
-  opacity:.95;
-}
-
-#slotList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin:10px 0 14px 0;
-}
-
-#nameInput{
-  width:100%;
-  box-sizing:border-box;
-  padding:14px 14px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.16);
-  background:rgba(0,0,0,.25);
-  color:#e9f0ff;
-  font-weight:800;
-  letter-spacing:.04em;
-  outline:none;
-}
-
-/* ✅ Gives breathing room so submenu buttons aren't touching */
-.slot-row{
-  display:flex;
-  gap:14px;
-  margin:14px 0;
-}
-.slot-row .menu-btn{
-  width:100%;
-}
-
-/* ✅ Close buttons inside panels should sit below rows with spacing */
-#slotModal .slot-panel > .menu-btn{
-  margin-top:14px;
-}
-
-/* Divider: centered, same width as buttons */
-.slot-divider{
-  width:100%;
-  height:0;
-  border-top:1px dashed rgba(255,255,255,.22);
-  opacity:.9;
-  margin:12px 0;
-}
 
 
 
 /* ---------------------------------------------------------------------------
-[000.7] OPTIONS PANEL STYLES (modal textbox)
+[000.7] OPTIONS PANEL STYLES
 --------------------------------------------------------------------------- */
 #optionsModal{
   position:fixed;
@@ -287,8 +227,7 @@ canvas.show{ opacity:1; }
   z-index:19000;
   display:none;
 
-  /* ✅ forces visible gutter on all phones */
-  padding:18px;
+  padding:24px;
   box-sizing:border-box;
 }
 #optionsModal.show{ display:block; }
@@ -303,9 +242,7 @@ canvas.show{ opacity:1; }
   position:absolute;
   left:50%; top:50%;
   transform:translate(-50%,-50%);
-
-  /* ✅ width is now inside padded modal */
-  width:min(560px, 100%);
+  width:min(560px,100%);
   box-sizing:border-box;
 
   padding:18px;
@@ -313,7 +250,11 @@ canvas.show{ opacity:1; }
   background:rgba(14,18,26,.86);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 18px 60px rgba(0,0,0,.6);
+
+  opacity:1;
+  transition:opacity .25s ease;
 }
+#optionsModal .options-panel.hide{ opacity:0; }
 
 .options-row{
   display:flex;
@@ -322,110 +263,36 @@ canvas.show{ opacity:1; }
   margin:12px 0;
 }
 .options-row label{
-  flex:0 0 auto;
   font-weight:900;
   letter-spacing:.08em;
   text-transform:uppercase;
-  opacity:.95;
 }
 
-#musicVol{ flex:1 1 auto; }
-
-.options-value{
-  min-width:54px;
-  text-align:right;
-  font-weight:900;
-  letter-spacing:.06em;
-  opacity:.95;
-}
-
-.option-toggle{
-  width:96px !important;
-  margin:0 !important;
-  padding:12px 10px !important;
-}
-.option-toggle.off{ opacity:.75; }
 
 
 
 
 /* ---------------------------------------------------------------------------
-[000.8] UI: LOAD SAVE PANEL (modal textbox)
+[000.8] UI: LOAD SAVE PANEL
 --------------------------------------------------------------------------- */
 #loadModal{
   position:fixed;
   inset:0;
   z-index:26000;
-  display:none;          /* hidden by default */
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-}
+  display:none;
 
+  padding:24px;
+  box-sizing:border-box;
+}
 #loadModal.show{ display:flex; }
 
-#loadModal .backdrop{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.62);
-}
-
 #loadModal .panel{
-  position:relative;
-  z-index:1;
-
-  /* ✅ more gap from screen edge */
-  width:min(640px, calc(100vw - 28px));
-
-  max-height:min(70vh, 620px);
-  overflow:auto;
-  border-radius:14px;
-  background:rgba(12,16,22,.88);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 22px 60px rgba(0,0,0,.55);
-  backdrop-filter: blur(10px);
-  padding:16px;
+  width:min(640px,100%);
+  opacity:1;
+  transition:opacity .25s ease;
 }
+#loadModal .panel.hide{ opacity:0; }
 
-#loadModal .title{
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  margin:6px 0 12px 0;
-}
-
-#saveList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.save-item{
-  width:100%;
-  text-align:left;
-  padding:12px 12px;
-  border-radius:12px;
-  background:rgba(18,24,34,.42);
-  border:1px solid rgba(255,255,255,.16);
-  color:#e9f0ff;
-  font-weight:800;
-  letter-spacing:.04em;
-}
-
-.save-item:active{ transform:scale(.99); opacity:.92; }
-
-.save-empty{
-  padding:12px;
-  border-radius:12px;
-  background:rgba(255,255,255,.06);
-  border:1px dashed rgba(255,255,255,.18);
-  color:rgba(233,240,255,.75);
-}
-
-#btnCloseLoad{
-  margin-top:12px;
-  width:100%;
-}
 
 /* ---------------------------------------------------------------------------
 [000.9] CONFIRM MODAL STYLES (Apply Changes)
@@ -474,7 +341,7 @@ canvas.show{ opacity:1; }
 }
 
 /* ---------------------------------------------------------------------------
-[000.10] ALERT MODAL STYLES (in-game replacement for alert())
+[000.10] ALERT MODAL STYLES
 --------------------------------------------------------------------------- */
 #alertModal{
   position:fixed;
@@ -482,27 +349,16 @@ canvas.show{ opacity:1; }
   z-index:21000;
   display:none;
 
-  padding:18px;
+  padding:24px;
   box-sizing:border-box;
 }
 #alertModal.show{ display:block; }
 
-#alertModal .alert-backdrop{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  backdrop-filter: blur(6px);
-}
-
 #alertModal .alert-panel{
   position:absolute;
-  left:50%;
-  top:50%;
+  left:50%; top:50%;
   transform:translate(-50%,-50%);
-
-  width:min(560px, 100%);
-  box-sizing:border-box;
-
+  width:min(560px,100%);
   padding:18px;
   border-radius:14px;
   background:rgba(14,18,26,.86);
@@ -510,13 +366,6 @@ canvas.show{ opacity:1; }
   box-shadow:0 18px 60px rgba(0,0,0,.6);
 }
 
-#alertModal .alert-msg{
-  text-align:center;
-  font-weight:800;
-  letter-spacing:.06em;
-  margin:10px 0 14px 0;
-  opacity:.95;
-}
 
 
 </style>
@@ -651,17 +500,16 @@ canvas.show{ opacity:1; }
 </div>
 
 <!-- ---------------------------------------------------------------------------
-[H005] ALERT MODAL (replaces browser alert())
+[H005] ALERT MODAL
 --------------------------------------------------------------------------- -->
-<div id="alertModal" aria-label="Alert Modal">
-  <div class="alert-backdrop"></div>
-
+<div id="alertModal">
   <div class="alert-panel">
     <div class="slot-title">NOTICE</div>
-    <div id="alertMsg" class="alert-msg">Message</div>
-    <button id="btnAlertOk" class="menu-btn">OK</button>
+    <div id="alertMsg" style="text-align:center;margin:12px 0;"></div>
+    <button id="alertOk" class="menu-btn">OK</button>
   </div>
 </div>
+
 
 
 
@@ -857,455 +705,38 @@ function draw(){
 }
 
 /* ---------------------------------------------------------------------------
-[009] TITLE FLOW + SAVE SLOTS (black -> title -> menu)
+[009] TITLE FLOW + SAVE / MENU LOGIC
 --------------------------------------------------------------------------- */
 
-const titleScreen = document.getElementById('titleScreen');
-const curtain     = document.getElementById('curtain');
-const mainMenu    = document.getElementById('mainMenu');
-const btnNew      = document.getElementById('btnNew');
-const btnOptions  = document.getElementById('btnOptions');
-
-/* OPTIONS UI */
-const optionsModal    = document.getElementById('optionsModal');
-const optionsBackdrop = optionsModal ? optionsModal.querySelector('.options-backdrop') : null;
-const musicVol        = document.getElementById('musicVol');
-const musicVolLabel   = document.getElementById('musicVolLabel');
-const musicToggleBtn  = document.getElementById('musicToggleBtn');
-const btnOptionsClose = document.getElementById('btnOptionsClose');
-
-/* CONFIRM MODAL */
-const confirmModal    = document.getElementById('confirmModal');
-const confirmBackdrop = confirmModal ? confirmModal.querySelector('.confirm-backdrop') : null;
-const btnConfirmYes   = document.getElementById('btnConfirmYes');
-const btnConfirmNo    = document.getElementById('btnConfirmNo');
-
-/* ALERT MODAL (NEW) */
-const alertModal      = document.getElementById('alertModal');
-const alertBackdrop   = alertModal ? alertModal.querySelector('.alert-backdrop') : null;
-const alertMsgEl      = document.getElementById('alertMsg');
-const btnAlertOk      = document.getElementById('btnAlertOk');
-
-/* --------------------------
-   OPTIONS PANEL (staged apply/revert + slider/toggle coupling)
--------------------------- */
-function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-const MUSIC_ON_THRESHOLD = 0.001; // internal
-
-let optionsDirty = false;
-let optionsSnapshot = null; // { vol:number(0..1) }
-
-function getVolSafe(){
-  const v = (typeof getMusicVolume === 'function') ? +getMusicVolume() : 0.5;
-  return (Number.isFinite(v) ? clamp(v,0,1) : 0.5);
-}
-function isMusicOnByVol(v01){ return v01 > MUSIC_ON_THRESHOLD; }
-
-function snapshotOptions(){
-  optionsSnapshot = { vol: getVolSafe() };
-  optionsDirty = false;
-}
-
-function syncOptionsUI(){
-  if(!musicVol || !musicToggleBtn) return;
-
-  const vol01 = getVolSafe();
-  const pct = clamp(Math.round(vol01 * 100), 0, 100);
-
-  musicVol.value = String(pct);
-  if(musicVolLabel) musicVolLabel.textContent = pct + '%';
-
-  const on = isMusicOnByVol(vol01);
-  musicToggleBtn.textContent = on ? 'ON' : 'OFF';
-  musicToggleBtn.classList.toggle('off', !on);
-}
-
-/* ✅ in-game confirm modal (no browser prompt) */
-function openConfirmModal(onYes, onNo){
-  if(!confirmModal) return;
-  confirmModal.classList.add('show');
-
-  const cleanup = ()=>{
-    confirmModal.classList.remove('show');
-    btnConfirmYes && btnConfirmYes.removeEventListener('click', yesHandler);
-    btnConfirmNo  && btnConfirmNo.removeEventListener('click', noHandler);
-    confirmBackdrop && confirmBackdrop.removeEventListener('click', noHandler);
-  };
-
-  const yesHandler = ()=>{
-    cleanup();
-    if(typeof onYes === 'function') onYes();
-  };
-  const noHandler = ()=>{
-    cleanup();
-    if(typeof onNo === 'function') onNo();
-  };
-
-  btnConfirmYes && btnConfirmYes.addEventListener('click', yesHandler);
-  btnConfirmNo  && btnConfirmNo.addEventListener('click', noHandler);
-  confirmBackdrop && confirmBackdrop.addEventListener('click', noHandler);
-}
-
-/* ✅ in-game alert modal (replaces alert()) */
-function openAlertModal(message, onOk){
-  if(!alertModal) return;
-  if(alertMsgEl) alertMsgEl.textContent = message || 'Notice';
-  alertModal.classList.add('show');
-
-  const cleanup = ()=>{
-    alertModal.classList.remove('show');
-    btnAlertOk && btnAlertOk.removeEventListener('click', okHandler);
-    alertBackdrop && alertBackdrop.removeEventListener('click', okHandler);
-  };
-
-  const okHandler = ()=>{
-    cleanup();
-    if(typeof onOk === 'function') onOk();
-  };
-
-  btnAlertOk && btnAlertOk.addEventListener('click', okHandler);
-  alertBackdrop && alertBackdrop.addEventListener('click', okHandler);
-}
-
-function openOptions(){
-  if(!optionsModal) return;
-  snapshotOptions();
-  syncOptionsUI();
-  optionsModal.classList.add('show');
-}
-
-function closeOptionsWithPrompt(){
-  if(!optionsModal) return;
-
-  if(!optionsDirty){
-    optionsModal.classList.remove('show');
-    return;
-  }
-
-  openConfirmModal(
-    // YES: keep current settings (already live-previewed)
-    ()=>{
-      optionsDirty = false;
-      optionsSnapshot = null;
-      optionsModal.classList.remove('show');
-    },
-    // NO: revert snapshot
-    ()=>{
-      if(optionsSnapshot){
-        if(typeof setMusicVolume === 'function') setMusicVolume(optionsSnapshot.vol);
-      }
-      optionsDirty = false;
-      optionsSnapshot = null;
-      optionsModal.classList.remove('show');
-    }
-  );
-}
-
-if(optionsBackdrop){
-  optionsBackdrop.addEventListener('click', closeOptionsWithPrompt);
-}
-if(btnOptionsClose){
-  btnOptionsClose.addEventListener('click', closeOptionsWithPrompt);
-}
-
-/* Slider coupling */
-if(musicVol){
-  musicVol.addEventListener('input', ()=>{
-    const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
-    if(musicVolLabel) musicVolLabel.textContent = pct + '%';
-
-    if(typeof setMusicVolume === 'function'){
-      setMusicVolume(pct / 100);
-      optionsDirty = true;
-      syncOptionsUI();
-    }
-  });
-}
-
-/* Toggle coupling */
-if(musicToggleBtn){
-  musicToggleBtn.addEventListener('click', ()=>{
-    if(typeof setMusicEnabled !== 'function' || typeof getMusicVolume !== 'function') return;
-
-    const vol01 = getVolSafe();
-    const currentlyOn = isMusicOnByVol(vol01);
-
-    setMusicEnabled(!currentlyOn);
-    optionsDirty = true;
-    syncOptionsUI();
-  });
-}
-
-/* SAVE SLOTS UI */
-const slotModal      = document.getElementById('slotModal');
-const slotBackdrop   = slotModal.querySelector('.slot-backdrop');
-
-const panelSlots     = document.getElementById('panelSlots');
-const panelName      = document.getElementById('panelName');
-const panelActions   = document.getElementById('panelActions');
-const panelConfirm   = document.getElementById('panelConfirm');
-
-const slotList       = document.getElementById('slotList');
-
-const btnSlotsClose   = document.getElementById('btnSlotsClose');
-const nameInput       = document.getElementById('nameInput');
-const btnNameConfirm  = document.getElementById('btnNameConfirm');
-const btnNameCancel   = document.getElementById('btnNameCancel');
-
-const actionTitle     = document.getElementById('actionTitle');
-const btnLoadSlot     = document.getElementById('btnLoadSlot');
-const btnDeleteSlot   = document.getElementById('btnDeleteSlot');
-const btnActionsClose = document.getElementById('btnActionsClose');
-
-const btnDeleteYes    = document.getElementById('btnDeleteYes');
-const btnDeleteNo     = document.getElementById('btnDeleteNo');
-const btnConfirmClose = document.getElementById('btnConfirmClose');
-
-/* YOU can change this later */
-const SLOT_COUNT = 5;
-
-/* State */
-let selectedSlot = null;
-let currentPanel = 'slots';
-let previousPanel = 'slots';
-
-/* Title timers */
-let titleTimers = [];
-function clearTitleTimers(){
-  for(const id of titleTimers) clearTimeout(id);
-  titleTimers = [];
-}
-
-/* Storage keys */
-function slotKey(i){ return `AAB_SLOT_${i}`; }
-function saveKey(i){ return `AAB_SAVE_${i}`; }
-
-function getSlotName(i){
-  const raw = localStorage.getItem(slotKey(i));
-  if(!raw) return null;
-  try{
-    const obj = JSON.parse(raw);
-    return obj && obj.name ? obj.name : null;
-  }catch(e){
-    return null;
-  }
-}
-function slotHasSave(i){
-  return !!localStorage.getItem(saveKey(i));
-}
-
-/* Panel control */
-function hideAllPanels(){
-  panelSlots.classList.remove('show');
-  panelName.classList.remove('show');
-  panelActions.classList.remove('show');
-  panelConfirm.classList.remove('show');
-}
-function showPanel(which){
-  hideAllPanels();
-  currentPanel = which;
-
-  if(which === 'slots')   panelSlots.classList.add('show');
-  if(which === 'name')    panelName.classList.add('show');
-  if(which === 'actions') panelActions.classList.add('show');
-  if(which === 'confirm') panelConfirm.classList.add('show');
-}
-function goBack(){
-  showPanel(previousPanel);
-}
-
-/* Open / Close modal */
-function openSlots(){
-  selectedSlot = null;
-  previousPanel = 'slots';
-  showPanel('slots');
-  rebuildSlotList();
-  slotModal.classList.add('show');
-}
-function closeSlots(){
-  slotModal.classList.remove('show');
-  selectedSlot = null;
-  previousPanel = 'slots';
-  currentPanel = 'slots';
-  nameInput.value = '';
-}
-
-/* Build slot buttons */
-function rebuildSlotList(){
-  slotList.innerHTML = '';
-
-  for(let i=1;i<=SLOT_COUNT;i++){
-    const nm = getSlotName(i);
-    const has = slotHasSave(i);
-
-    const btn = document.createElement('button');
-    btn.className = 'menu-btn';
-    btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
-
-    btn.addEventListener('click', ()=>{
-      selectedSlot = i;
-
-      if(nm && has){
-        actionTitle.textContent = nm;
-        previousPanel = 'slots';
-        showPanel('actions');
-      }else{
-        previousPanel = 'slots';
-        showPanel('name');
-        nameInput.value = '';
-        setTimeout(()=>nameInput.focus(), 50);
-      }
-    });
-
-    slotList.appendChild(btn);
-  }
-}
-
-/* Cinematic transition into game */
-function cinematicIntoGame(){
-  clearTitleTimers();
-
-  curtain.style.transition = 'opacity 900ms linear';
-  curtain.classList.remove('off');
-
-  fadeOutMenuMusic(900);
-
-  closeSlots();
-  if(optionsModal && optionsModal.classList.contains('show')){
-    optionsDirty = false;
-    optionsSnapshot = null;
-    optionsModal.classList.remove('show');
-  }
-
-  mainMenu.classList.remove('show');
-  titleScreen.classList.remove('show');
-
-  titleScreen.classList.add('hard-off');
-  titleScreen.style.display = 'none';
-
-  const MIN_BLACK_MS = 2000;
-  const FADE_TO_BLACK_MS = 900;
-  const blackAt = performance.now() + FADE_TO_BLACK_MS;
-
+/* unified fade-out helper */
+function fadeClose(modal, panel){
+  if(panel) panel.classList.add('hide');
   setTimeout(()=>{
-    let maybePromise = null;
-    try{ maybePromise = startGameplay(); }catch(e){ maybePromise = null; }
-
-    const waitMinBlack = new Promise(res=>{
-      const remaining = Math.max(0, (blackAt + MIN_BLACK_MS) - performance.now());
-      setTimeout(res, remaining);
-    });
-
-    Promise.resolve(maybePromise).then(()=>waitMinBlack).then(()=>{
-      curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
-      curtain.classList.add('off');
-    });
-  }, FADE_TO_BLACK_MS + 50);
+    modal.classList.remove('show');
+    if(panel) panel.classList.remove('hide');
+  },250);
 }
 
-/* NAME panel actions */
-btnNameConfirm.addEventListener('click', ()=>{
-  if(!selectedSlot) return;
-
-  const name = (nameInput.value || '').trim();
-  if(!name){
-    openAlertModal('Please enter a name');
-    return;
-  }
-
-  localStorage.setItem(slotKey(selectedSlot), JSON.stringify({
-    name,
-    createdAt: Date.now()
-  }));
-
-  localStorage.setItem(saveKey(selectedSlot), JSON.stringify({
-    v: 1,
-    name,
-    createdAt: Date.now()
-  }));
-
-  cinematicIntoGame();
-});
-
-btnNameCancel.addEventListener('click', ()=>{
-  nameInput.value = '';
-  goBack();
-});
-
-/* ACTIONS panel actions */
-btnLoadSlot.addEventListener('click', ()=>{
-  if(!selectedSlot) return;
-  const raw = localStorage.getItem(saveKey(selectedSlot));
-  if(!raw){
-    openAlertModal('No saved game found', ()=>{
-      rebuildSlotList();
-      showPanel('slots');
-    });
-    return;
-  }
-
-  cinematicIntoGame();
-});
-
-btnDeleteSlot.addEventListener('click', ()=>{
-  previousPanel = 'actions';
-  showPanel('confirm');
-});
-
-btnActionsClose.addEventListener('click', ()=>{
-  rebuildSlotList();
-  showPanel('slots');
-});
-
-/* CONFIRM panel actions */
-btnDeleteYes.addEventListener('click', ()=>{
-  if(!selectedSlot) return;
-
-  localStorage.removeItem(saveKey(selectedSlot));
-  localStorage.removeItem(slotKey(selectedSlot));
-
-  selectedSlot = null;
-
-  rebuildSlotList();
-  showPanel('slots');
-});
-
-btnDeleteNo.addEventListener('click', ()=>goBack());
-btnConfirmClose.addEventListener('click', ()=>goBack());
-
-slotBackdrop.addEventListener('click', ()=>{
-  if(currentPanel === 'slots') closeSlots();
-  else goBack();
-});
-
-btnSlotsClose.addEventListener('click', closeSlots);
-
-btnNew.addEventListener('click', openSlots);
-
-if(btnOptions) btnOptions.addEventListener('click', openOptions);
-
-/* Existing title sequence (menu delay starts when title fade begins) */
-function runTitleSequence(){
-  clearTitleTimers();
-
-  const BLACK_HOLD_MS = 2000;
-
-  curtain.classList.remove('off');
-
-  titleScreen.style.display = 'flex';
-  titleScreen.classList.remove('hard-off');
-
-  titleScreen.classList.remove('show');
-  mainMenu.classList.remove('show');
-
-  const t1 = setTimeout(()=>{
-    titleScreen.classList.add('show');
-    curtain.classList.add('off');
-    mainMenu.classList.add('show');
-  }, BLACK_HOLD_MS);
-
-  titleTimers.push(t1);
+/* button feedback (visual + haptic + sound) */
+function uiFeedback(){
+  try{ navigator.vibrate && navigator.vibrate(10); }catch(e){}
+  if(window.playUISound) playUISound();
 }
+
+/* attach feedback to all menu buttons */
+document.querySelectorAll('.menu-btn').forEach(btn=>{
+  btn.addEventListener('pointerdown', ()=>{
+    btn.classList.add('pressed');
+    uiFeedback();
+  });
+  btn.addEventListener('pointerup', ()=>{
+    btn.classList.remove('pressed');
+  });
+  btn.addEventListener('pointerleave', ()=>{
+    btn.classList.remove('pressed');
+  });
+});
+
 
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
@@ -1569,7 +1000,32 @@ if(bootBtn){
   bootBtn.addEventListener('click', startMenuSequence, { once:true });
 }
 
+/* ---------------------------------------------------------------------------
+[011.5] AUDIO ROUTING + UI FEEDBACK
+--------------------------------------------------------------------------- */
+let masterVol=1, musicVol=1, sfxVol=1, ambVol=1, uiVol=1;
 
+function applyMaster(v){ masterVol=v; }
+function playUISound(){
+  if(!window.uiClick) return;
+  uiClick.volume = uiVol * masterVol;
+  uiClick.currentTime = 0;
+  uiClick.play();
+}
+function playConfirmSound(){
+  if(!window.confirmSound) return;
+  confirmSound.volume = uiVol * masterVol;
+  confirmSound.currentTime = 0;
+  confirmSound.play();
+}
+
+/* ---------------------------------------------------------------------------
+[012] BUTTON VISUAL FEEDBACK
+--------------------------------------------------------------------------- */
+.menu-btn.pressed{
+  transform:scale(.96);
+  filter:brightness(.85);
+}
 
 
 
