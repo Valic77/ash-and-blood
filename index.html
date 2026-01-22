@@ -181,6 +181,10 @@ canvas.show{ opacity:1; }
   inset:0;
   z-index:18000;
   display:none;
+
+  /* ✅ forces visible gutter on all phones */
+  padding:18px;
+  box-sizing:border-box;
 }
 #slotModal.show{ display:block; }
 
@@ -196,8 +200,9 @@ canvas.show{ opacity:1; }
   left:50%; top:50%;
   transform:translate(-50%,-50%);
 
-  /* ✅ more gap from screen edge */
-  width:min(560px, calc(100vw - 28px));
+  /* ✅ width is now inside padded modal */
+  width:min(560px, 100%);
+  box-sizing:border-box;
 
   padding:18px;
   border-radius:14px;
@@ -272,6 +277,7 @@ canvas.show{ opacity:1; }
 }
 
 
+
 /* ---------------------------------------------------------------------------
 [000.7] OPTIONS PANEL STYLES (modal textbox)
 --------------------------------------------------------------------------- */
@@ -280,6 +286,10 @@ canvas.show{ opacity:1; }
   inset:0;
   z-index:19000;
   display:none;
+
+  /* ✅ forces visible gutter on all phones */
+  padding:18px;
+  box-sizing:border-box;
 }
 #optionsModal.show{ display:block; }
 
@@ -294,8 +304,9 @@ canvas.show{ opacity:1; }
   left:50%; top:50%;
   transform:translate(-50%,-50%);
 
-  /* ✅ more gap from screen edge */
-  width:min(560px, calc(100vw - 28px));
+  /* ✅ width is now inside padded modal */
+  width:min(560px, 100%);
+  box-sizing:border-box;
 
   padding:18px;
   border-radius:14px;
@@ -334,6 +345,7 @@ canvas.show{ opacity:1; }
   padding:12px 10px !important;
 }
 .option-toggle.off{ opacity:.75; }
+
 
 
 
@@ -423,6 +435,10 @@ canvas.show{ opacity:1; }
   inset:0;
   z-index:20000;
   display:none;
+
+  /* ✅ forces visible gutter on all phones */
+  padding:18px;
+  box-sizing:border-box;
 }
 #confirmModal.show{ display:block; }
 
@@ -439,20 +455,14 @@ canvas.show{ opacity:1; }
   top:50%;
   transform:translate(-50%,-50%);
 
-  width:min(560px, calc(100vw - 28px));
+  width:min(560px, 100%);
+  box-sizing:border-box;
+
   padding:18px;
   border-radius:14px;
   background:rgba(14,18,26,.86);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 18px 60px rgba(0,0,0,.6);
-}
-
-#confirmModal .confirm-msg{
-  text-align:center;
-  font-weight:800;
-  letter-spacing:.06em;
-  margin:10px 0 14px 0;
-  opacity:.95;
 }
 
 #confirmModal .confirm-row{
@@ -461,6 +471,51 @@ canvas.show{ opacity:1; }
 }
 #confirmModal .confirm-row .menu-btn{
   width:100%;
+}
+
+/* ---------------------------------------------------------------------------
+[000.10] ALERT MODAL STYLES (in-game replacement for alert())
+--------------------------------------------------------------------------- */
+#alertModal{
+  position:fixed;
+  inset:0;
+  z-index:21000;
+  display:none;
+
+  padding:18px;
+  box-sizing:border-box;
+}
+#alertModal.show{ display:block; }
+
+#alertModal .alert-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+}
+
+#alertModal .alert-panel{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+
+  width:min(560px, 100%);
+  box-sizing:border-box;
+
+  padding:18px;
+  border-radius:14px;
+  background:rgba(14,18,26,.86);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 18px 60px rgba(0,0,0,.6);
+}
+
+#alertModal .alert-msg{
+  text-align:center;
+  font-weight:800;
+  letter-spacing:.06em;
+  margin:10px 0 14px 0;
+  opacity:.95;
 }
 
 
@@ -594,6 +649,21 @@ canvas.show{ opacity:1; }
     </div>
   </div>
 </div>
+
+<!-- ---------------------------------------------------------------------------
+[H005] ALERT MODAL (replaces browser alert())
+--------------------------------------------------------------------------- -->
+<div id="alertModal" aria-label="Alert Modal">
+  <div class="alert-backdrop"></div>
+
+  <div class="alert-panel">
+    <div class="slot-title">NOTICE</div>
+    <div id="alertMsg" class="alert-msg">Message</div>
+    <button id="btnAlertOk" class="menu-btn">OK</button>
+  </div>
+</div>
+
+
 
 
 <!-- ---------------------------------------------------------------------------
@@ -804,12 +874,17 @@ const musicVolLabel   = document.getElementById('musicVolLabel');
 const musicToggleBtn  = document.getElementById('musicToggleBtn');
 const btnOptionsClose = document.getElementById('btnOptionsClose');
 
-/* CONFIRM MODAL (NEW) */
-const confirmModal   = document.getElementById('confirmModal');
-const confirmBackdrop= confirmModal ? confirmModal.querySelector('.confirm-backdrop') : null;
-const confirmMsgEl   = document.getElementById('confirmMsg');
-const btnConfirmYes  = document.getElementById('btnConfirmYes');
-const btnConfirmNo   = document.getElementById('btnConfirmNo');
+/* CONFIRM MODAL */
+const confirmModal    = document.getElementById('confirmModal');
+const confirmBackdrop = confirmModal ? confirmModal.querySelector('.confirm-backdrop') : null;
+const btnConfirmYes   = document.getElementById('btnConfirmYes');
+const btnConfirmNo    = document.getElementById('btnConfirmNo');
+
+/* ALERT MODAL (NEW) */
+const alertModal      = document.getElementById('alertModal');
+const alertBackdrop   = alertModal ? alertModal.querySelector('.alert-backdrop') : null;
+const alertMsgEl      = document.getElementById('alertMsg');
+const btnAlertOk      = document.getElementById('btnAlertOk');
 
 /* --------------------------
    OPTIONS PANEL (staged apply/revert + slider/toggle coupling)
@@ -845,9 +920,9 @@ function syncOptionsUI(){
   musicToggleBtn.classList.toggle('off', !on);
 }
 
-function openConfirmModal(message, onYes, onNo){
+/* ✅ in-game confirm modal (no browser prompt) */
+function openConfirmModal(onYes, onNo){
   if(!confirmModal) return;
-  if(confirmMsgEl) confirmMsgEl.textContent = message || 'Apply changes?';
   confirmModal.classList.add('show');
 
   const cleanup = ()=>{
@@ -871,6 +946,27 @@ function openConfirmModal(message, onYes, onNo){
   confirmBackdrop && confirmBackdrop.addEventListener('click', noHandler);
 }
 
+/* ✅ in-game alert modal (replaces alert()) */
+function openAlertModal(message, onOk){
+  if(!alertModal) return;
+  if(alertMsgEl) alertMsgEl.textContent = message || 'Notice';
+  alertModal.classList.add('show');
+
+  const cleanup = ()=>{
+    alertModal.classList.remove('show');
+    btnAlertOk && btnAlertOk.removeEventListener('click', okHandler);
+    alertBackdrop && alertBackdrop.removeEventListener('click', okHandler);
+  };
+
+  const okHandler = ()=>{
+    cleanup();
+    if(typeof onOk === 'function') onOk();
+  };
+
+  btnAlertOk && btnAlertOk.addEventListener('click', okHandler);
+  alertBackdrop && alertBackdrop.addEventListener('click', okHandler);
+}
+
 function openOptions(){
   if(!optionsModal) return;
   snapshotOptions();
@@ -881,14 +977,12 @@ function openOptions(){
 function closeOptionsWithPrompt(){
   if(!optionsModal) return;
 
-  // No changes? just close.
   if(!optionsDirty){
     optionsModal.classList.remove('show');
     return;
   }
 
   openConfirmModal(
-    'Apply changes?',
     // YES: keep current settings (already live-previewed)
     ()=>{
       optionsDirty = false;
@@ -914,10 +1008,7 @@ if(btnOptionsClose){
   btnOptionsClose.addEventListener('click', closeOptionsWithPrompt);
 }
 
-/* Slider input:
-   - 0 => OFF (toggle flips, slider stays 0)
-   - >0 => ON (toggle flips, lastNonZero updates)
-*/
+/* Slider coupling */
 if(musicVol){
   musicVol.addEventListener('input', ()=>{
     const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
@@ -926,15 +1017,12 @@ if(musicVol){
     if(typeof setMusicVolume === 'function'){
       setMusicVolume(pct / 100);
       optionsDirty = true;
-      syncOptionsUI(); // ensures toggle state stays synced
+      syncOptionsUI();
     }
   });
 }
 
-/* Toggle click:
-   - OFF => setMusicEnabled(false) => slider becomes 0
-   - ON  => setMusicEnabled(true)  => slider restores lastNonZero (or 50% default)
-*/
+/* Toggle coupling */
 if(musicToggleBtn){
   musicToggleBtn.addEventListener('click', ()=>{
     if(typeof setMusicEnabled !== 'function' || typeof getMusicVolume !== 'function') return;
@@ -944,7 +1032,7 @@ if(musicToggleBtn){
 
     setMusicEnabled(!currentlyOn);
     optionsDirty = true;
-    syncOptionsUI(); // slider visibly updates to 0 or restored volume
+    syncOptionsUI();
   });
 }
 
@@ -978,10 +1066,10 @@ const SLOT_COUNT = 5;
 
 /* State */
 let selectedSlot = null;
-let currentPanel = 'slots';   // 'slots' | 'name' | 'actions' | 'confirm'
+let currentPanel = 'slots';
 let previousPanel = 'slots';
 
-/* Title timers (so we can cancel them when entering gameplay) */
+/* Title timers */
 let titleTimers = [];
 function clearTitleTimers(){
   for(const id of titleTimers) clearTimeout(id);
@@ -989,8 +1077,8 @@ function clearTitleTimers(){
 }
 
 /* Storage keys */
-function slotKey(i){ return `AAB_SLOT_${i}`; }   // slot meta (name, etc.)
-function saveKey(i){ return `AAB_SAVE_${i}`; }   // save payload
+function slotKey(i){ return `AAB_SLOT_${i}`; }
+function saveKey(i){ return `AAB_SAVE_${i}`; }
 
 function getSlotName(i){
   const raw = localStorage.getItem(slotKey(i));
@@ -1073,7 +1161,7 @@ function rebuildSlotList(){
   }
 }
 
-/* Cinematic transition into game (fade black + fade music out) */
+/* Cinematic transition into game */
 function cinematicIntoGame(){
   clearTitleTimers();
 
@@ -1121,7 +1209,7 @@ btnNameConfirm.addEventListener('click', ()=>{
 
   const name = (nameInput.value || '').trim();
   if(!name){
-    alert('Please enter a name');
+    openAlertModal('Please enter a name');
     return;
   }
 
@@ -1149,9 +1237,10 @@ btnLoadSlot.addEventListener('click', ()=>{
   if(!selectedSlot) return;
   const raw = localStorage.getItem(saveKey(selectedSlot));
   if(!raw){
-    alert('No saved game found');
-    rebuildSlotList();
-    showPanel('slots');
+    openAlertModal('No saved game found', ()=>{
+      rebuildSlotList();
+      showPanel('slots');
+    });
     return;
   }
 
@@ -1212,16 +1301,11 @@ function runTitleSequence(){
   const t1 = setTimeout(()=>{
     titleScreen.classList.add('show');
     curtain.classList.add('off');
-
-    // start menu timing NOW; CSS delay controls appearance
     mainMenu.classList.add('show');
   }, BLACK_HOLD_MS);
 
   titleTimers.push(t1);
 }
-
-
-
 
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
