@@ -405,14 +405,7 @@ const curtain     = document.getElementById('curtain');
 const mainMenu    = document.getElementById('mainMenu');
 const btnNew      = document.getElementById('btnNew');
 const btnLoad     = document.getElementById('btnLoad');
-
-if(btnLoad){
-  btnLoad.addEventListener('click', ()=>{
-    alert('Load Saved Game button works');
-  });
-}
-
-
+const btnOptions  = document.getElementById('btnOptions');
 
 function runTitleSequence(){
   const BLACK_HOLD_MS = 2000;
@@ -435,6 +428,17 @@ function runTitleSequence(){
 
   }, BLACK_HOLD_MS);
 }
+
+/* Load Saved Game (Option A: only tells you if a save exists) */
+btnLoad.addEventListener('click', ()=>{
+  const save = localStorage.getItem('AS_SAVE_V1'); // this is the save "slot name"
+  if(!save){
+    alert('No saved game found');
+    return;
+  }
+  alert('Saved game found (loading not added yet)');
+});
+
 
 
 /* ---------------------------------------------------------------------------
