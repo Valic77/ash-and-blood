@@ -193,6 +193,7 @@ canvas.show{ opacity:1; }
   backdrop-filter: blur(6px);
 }
 
+/* All “text boxes” share this look */
 #slotModal .slot-panel{
   position:absolute;
   left:50%; top:50%;
@@ -204,6 +205,10 @@ canvas.show{ opacity:1; }
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 18px 60px rgba(0,0,0,.6);
 }
+
+/* Hide all panels by default; JS shows one at a time */
+#slotModal .slot-panel{ display:none; }
+#slotModal .slot-panel.show{ display:block; }
 
 .slot-title{
   font-weight:900;
@@ -229,17 +234,6 @@ canvas.show{ opacity:1; }
   margin:10px 0 14px 0;
 }
 
-.slot-empty{
-  text-align:center;
-  opacity:.75;
-  padding:12px 0;
-  font-weight:700;
-}
-
-#nameBlock, #actionBlock, #confirmDelete{
-  display:none;
-}
-
 #nameInput{
   width:100%;
   box-sizing:border-box;
@@ -261,6 +255,16 @@ canvas.show{ opacity:1; }
 .slot-row .menu-btn{
   width:100%;
 }
+
+/* Divider: centered, same width as buttons */
+.slot-divider{
+  width:100%;
+  height:0;
+  border-top:1px dashed rgba(255,255,255,.22);
+  opacity:.9;
+  margin:12px 0;
+}
+
 
 
 /* ---------------------------------------------------------------------------
@@ -376,44 +380,60 @@ canvas.show{ opacity:1; }
 <div id="slotModal" aria-label="Save Slots Panel">
   <div class="slot-backdrop"></div>
 
-  <div class="slot-panel">
-    <div class="slot-title" id="slotTitle">CHOOSE SAVE SLOT</div>
+  <!-- PANEL A: CHOOSE SLOT -->
+  <div class="slot-panel" id="panelSlots">
+    <div class="slot-title">CHOOSE SAVE SLOT</div>
 
     <div id="slotList"></div>
 
-    <!-- Divider (same width as buttons) -->
-    <div class="slot-divider" aria-hidden="true">----------------------</div>
+    <div class="slot-divider" aria-hidden="true"></div>
 
-    <!-- Name Survivor (hidden until needed) -->
-    <div id="nameBlock">
-      <div class="slot-subtitle">NAME SURVIVOR</div>
-      <input id="nameInput" type="text" maxlength="16" placeholder="Enter name..." />
-      <div class="slot-row">
-        <button id="btnNameConfirm" class="menu-btn">CONFIRM</button>
-        <button id="btnNameCancel" class="menu-btn">CANCEL</button>
-      </div>
+    <button id="btnSlotsClose" class="menu-btn">CLOSE</button>
+  </div>
+
+  <!-- PANEL B: NAME SURVIVOR -->
+  <div class="slot-panel" id="panelName">
+    <div class="slot-title">NAME SURVIVOR</div>
+
+    <input id="nameInput" type="text" maxlength="16" placeholder="Enter name..." />
+
+    <div class="slot-divider" aria-hidden="true"></div>
+
+    <div class="slot-row">
+      <button id="btnNameConfirm" class="menu-btn">CONFIRM</button>
+      <button id="btnNameCancel" class="menu-btn">CANCEL</button>
+    </div>
+  </div>
+
+  <!-- PANEL C: ACTIONS -->
+  <div class="slot-panel" id="panelActions">
+    <div class="slot-title" id="actionTitle">SAVE</div>
+
+    <div class="slot-divider" aria-hidden="true"></div>
+
+    <div class="slot-row">
+      <button id="btnLoadSlot" class="menu-btn">LOAD SAVE</button>
+      <button id="btnDeleteSlot" class="menu-btn">DELETE SAVE</button>
     </div>
 
-    <!-- Slot Actions (hidden until needed) -->
-    <div id="actionBlock">
-      <div class="slot-row">
-        <button id="btnLoadSlot" class="menu-btn">LOAD SAVE</button>
-        <button id="btnDeleteSlot" class="menu-btn">DELETE SAVE</button>
-      </div>
+    <button id="btnActionsClose" class="menu-btn">CLOSE</button>
+  </div>
 
-      <div id="confirmDelete">
-        <div class="slot-subtitle">ARE YOU SURE?</div>
-        <div class="slot-row">
-          <button id="btnDeleteYes" class="menu-btn">YES</button>
-          <button id="btnDeleteNo" class="menu-btn">NO</button>
-        </div>
-      </div>
+  <!-- PANEL D: CONFIRM DELETE -->
+  <div class="slot-panel" id="panelConfirm">
+    <div class="slot-title">ARE YOU SURE?</div>
+
+    <div class="slot-divider" aria-hidden="true"></div>
+
+    <div class="slot-row">
+      <button id="btnDeleteYes" class="menu-btn">YES</button>
+      <button id="btnDeleteNo" class="menu-btn">NO</button>
     </div>
 
-    <!-- Close (kept aligned with slot buttons by using same class) -->
-    <button id="btnCloseSlots" class="menu-btn">CLOSE</button>
+    <button id="btnConfirmClose" class="menu-btn">CLOSE</button>
   </div>
 </div>
+
 
 
 
@@ -617,34 +637,43 @@ const mainMenu    = document.getElementById('mainMenu');
 const btnNew      = document.getElementById('btnNew');
 const btnOptions  = document.getElementById('btnOptions');
 
-/* SAVE SLOT UI ELEMENTS */
+/* SAVE SLOTS UI */
 const slotModal      = document.getElementById('slotModal');
 const slotBackdrop   = slotModal.querySelector('.slot-backdrop');
-const slotTitle      = document.getElementById('slotTitle');
+
+const panelSlots     = document.getElementById('panelSlots');
+const panelName      = document.getElementById('panelName');
+const panelActions   = document.getElementById('panelActions');
+const panelConfirm   = document.getElementById('panelConfirm');
+
 const slotList       = document.getElementById('slotList');
-const btnCloseSlots  = document.getElementById('btnCloseSlots');
 
-const nameBlock      = document.getElementById('nameBlock');
-const nameInput      = document.getElementById('nameInput');
-const btnNameConfirm = document.getElementById('btnNameConfirm');
-const btnNameCancel  = document.getElementById('btnNameCancel');
+const btnSlotsClose   = document.getElementById('btnSlotsClose');
+const nameInput       = document.getElementById('nameInput');
+const btnNameConfirm  = document.getElementById('btnNameConfirm');
+const btnNameCancel   = document.getElementById('btnNameCancel');
 
-const actionBlock    = document.getElementById('actionBlock');
-const btnLoadSlot    = document.getElementById('btnLoadSlot');
-const btnDeleteSlot  = document.getElementById('btnDeleteSlot');
-const confirmDelete  = document.getElementById('confirmDelete');
-const btnDeleteYes   = document.getElementById('btnDeleteYes');
-const btnDeleteNo    = document.getElementById('btnDeleteNo');
+const actionTitle     = document.getElementById('actionTitle');
+const btnLoadSlot     = document.getElementById('btnLoadSlot');
+const btnDeleteSlot   = document.getElementById('btnDeleteSlot');
+const btnActionsClose = document.getElementById('btnActionsClose');
 
-/* YOU can change these later */
+const btnDeleteYes    = document.getElementById('btnDeleteYes');
+const btnDeleteNo     = document.getElementById('btnDeleteNo');
+const btnConfirmClose = document.getElementById('btnConfirmClose');
+
+/* YOU can change this later */
 const SLOT_COUNT = 5;
 
-/* Internal state */
+/* State */
 let selectedSlot = null;
+let currentPanel = 'slots';   // 'slots' | 'name' | 'actions' | 'confirm'
+let previousPanel = 'slots';
 
-/* Helpers */
-function slotKey(i){ return `AAB_SLOT_${i}`; }   // slot info (name, etc.)
-function saveKey(i){ return `AAB_SAVE_${i}`; }   // actual save data
+/* Storage keys */
+function slotKey(i){ return `AAB_SLOT_${i}`; }   // slot meta (name, etc.)
+function saveKey(i){ return `AAB_SAVE_${i}`; }   // save payload
+
 function getSlotName(i){
   const raw = localStorage.getItem(slotKey(i));
   if(!raw) return null;
@@ -659,89 +688,119 @@ function slotHasSave(i){
   return !!localStorage.getItem(saveKey(i));
 }
 
-/* UI show/hide */
+/* Panel control */
+function hideAllPanels(){
+  panelSlots.classList.remove('show');
+  panelName.classList.remove('show');
+  panelActions.classList.remove('show');
+  panelConfirm.classList.remove('show');
+}
+function showPanel(which){
+  hideAllPanels();
+  currentPanel = which;
+
+  if(which === 'slots')   panelSlots.classList.add('show');
+  if(which === 'name')    panelName.classList.add('show');
+  if(which === 'actions') panelActions.classList.add('show');
+  if(which === 'confirm') panelConfirm.classList.add('show');
+}
+function goBack(){
+  showPanel(previousPanel);
+}
+
+/* Open / Close modal */
 function openSlots(){
   selectedSlot = null;
-  slotTitle.textContent = 'CHOOSE SAVE SLOT';
-  nameBlock.style.display = 'none';
-  actionBlock.style.display = 'none';
-  confirmDelete.style.display = 'none';
-
+  previousPanel = 'slots';
+  showPanel('slots');
   rebuildSlotList();
-
   slotModal.classList.add('show');
 }
 function closeSlots(){
   slotModal.classList.remove('show');
-  nameInput.value = '';
   selectedSlot = null;
-}
-function showNamePrompt(slotNum){
-  selectedSlot = slotNum;
-  slotTitle.textContent = `NEW GAME — SLOT ${slotNum}`;
-  nameBlock.style.display = 'block';
-  actionBlock.style.display = 'none';
-  confirmDelete.style.display = 'none';
+  previousPanel = 'slots';
+  currentPanel = 'slots';
   nameInput.value = '';
-  setTimeout(()=>nameInput.focus(), 50);
-}
-function showActions(slotNum){
-  selectedSlot = slotNum;
-  const nm = getSlotName(slotNum) || `SLOT ${slotNum}`;
-  slotTitle.textContent = `${nm}`;
-  nameBlock.style.display = 'none';
-  actionBlock.style.display = 'block';
-  confirmDelete.style.display = 'none';
 }
 
-/* Build list */
+/* Build slot buttons */
 function rebuildSlotList(){
   slotList.innerHTML = '';
 
-  let any = false;
-
   for(let i=1;i<=SLOT_COUNT;i++){
     const nm = getSlotName(i);
-    const label = nm ? nm : '---New Game---';
+    const has = slotHasSave(i);
 
-    const row = document.createElement('button');
-    row.className = 'menu-btn';
-    row.textContent = `${i}  ${label}`;
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn';
 
-    row.addEventListener('click', ()=>{
-      if(nm && slotHasSave(i)){
-        showActions(i);
+    // REQUIRED:
+    // - New slots show: "1 ---NEW GAME---"
+    // - Saved slots show: "Valic" (name only) — no "1 Valic"
+    btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
+
+    btn.addEventListener('click', ()=>{
+      selectedSlot = i;
+
+      if(nm && has){
+        // Go to ACTIONS panel
+        actionTitle.textContent = nm;
+        previousPanel = 'slots';
+        showPanel('actions');
       }else{
-        showNamePrompt(i);
+        // Go to NAME panel
+        previousPanel = 'slots';
+        showPanel('name');
+        nameInput.value = '';
+        setTimeout(()=>nameInput.focus(), 50);
       }
     });
 
-    slotList.appendChild(row);
-
-    if(nm || slotHasSave(i)) any = true;
-  }
-
-  // If literally nothing exists yet, show a hint line inside the box
-  if(!any){
-    const msg = document.createElement('div');
-    msg.className = 'slot-empty';
-    msg.textContent = 'No saves available';
-    slotList.appendChild(msg);
+    slotList.appendChild(btn);
   }
 }
 
-/* Start game after slot chosen */
-function beginGameForSlot(slotNum){
-  // Hide menus
+/* Cinematic transition into game (fade black + fade music out) */
+function fadeOutMenuMusic(ms){
+  try{
+    if(!audioCtx || !menuGain) return;
+    const now = audioCtx.currentTime;
+
+    menuGain.gain.cancelScheduledValues(now);
+    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
+    menuGain.gain.linearRampToValueAtTime(0.0, now + (ms/1000));
+
+    if(menuSrc){
+      try{ menuSrc.stop(now + (ms/1000) + 0.05); }catch(e){}
+    }
+  }catch(e){}
+}
+
+function cinematicIntoGame(){
+  // Make curtain fade in (black)
+  curtain.style.transition = 'opacity 900ms linear';
+  curtain.classList.remove('off'); // opacity -> 1
+
+  // Fade menu music out
+  fadeOutMenuMusic(900);
+
+  // Hide menu UI immediately
   closeSlots();
-  titleScreen.classList.remove('show');
   mainMenu.classList.remove('show');
+  titleScreen.classList.remove('show');
 
-  // Start gameplay (your existing function)
-  startGameplay();
+  // Start gameplay after screen is black
+  setTimeout(()=>{
+    startGameplay(); // your existing function
+
+    // Fade black away (cinematic reveal)
+    curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
+    curtain.classList.add('off');
+  }, 950);
 }
 
-/* Create new game */
+/* NAME panel actions */
 btnNameConfirm.addEventListener('click', ()=>{
   if(!selectedSlot) return;
 
@@ -751,47 +810,55 @@ btnNameConfirm.addEventListener('click', ()=>{
     return;
   }
 
-  // Store slot meta
+  // Save slot meta
   localStorage.setItem(slotKey(selectedSlot), JSON.stringify({
     name,
     createdAt: Date.now()
   }));
 
-  // Create a starter save (minimal for now; we expand later)
+  // Create starter save payload (expand later)
   localStorage.setItem(saveKey(selectedSlot), JSON.stringify({
     v: 1,
     name,
     createdAt: Date.now()
   }));
 
-  beginGameForSlot(selectedSlot);
+  cinematicIntoGame();
 });
 
 btnNameCancel.addEventListener('click', ()=>{
-  selectedSlot = null;
-  nameBlock.style.display = 'none';
-  slotTitle.textContent = 'CHOOSE SAVE SLOT';
+  nameInput.value = '';
+  goBack(); // back to slots
 });
 
-/* Load / Delete */
+/* ACTIONS panel actions */
 btnLoadSlot.addEventListener('click', ()=>{
   if(!selectedSlot) return;
-
   const raw = localStorage.getItem(saveKey(selectedSlot));
   if(!raw){
+    // If it somehow has a name but no save payload, treat as empty
     alert('No saved game found');
+    rebuildSlotList();
+    showPanel('slots');
     return;
   }
 
-  // Later: we will actually apply saved state here.
-  // For now: it still enters the game so you can confirm flow works.
-  beginGameForSlot(selectedSlot);
+  // Later we will actually apply saved state from "raw".
+  // For now: cinematic into game confirms the flow is correct.
+  cinematicIntoGame();
 });
 
 btnDeleteSlot.addEventListener('click', ()=>{
-  confirmDelete.style.display = 'block';
+  previousPanel = 'actions';
+  showPanel('confirm');
 });
 
+btnActionsClose.addEventListener('click', ()=>{
+  rebuildSlotList();
+  showPanel('slots');
+});
+
+/* CONFIRM panel actions */
 btnDeleteYes.addEventListener('click', ()=>{
   if(!selectedSlot) return;
 
@@ -799,20 +866,32 @@ btnDeleteYes.addEventListener('click', ()=>{
   localStorage.removeItem(slotKey(selectedSlot));
 
   selectedSlot = null;
-  confirmDelete.style.display = 'none';
-  nameBlock.style.display = 'none';
-  actionBlock.style.display = 'none';
-  slotTitle.textContent = 'CHOOSE SAVE SLOT';
+
   rebuildSlotList();
+  showPanel('slots');
 });
 
 btnDeleteNo.addEventListener('click', ()=>{
-  confirmDelete.style.display = 'none';
+  goBack(); // back to actions
 });
 
-/* Close modal */
-btnCloseSlots.addEventListener('click', closeSlots);
-slotBackdrop.addEventListener('click', closeSlots);
+btnConfirmClose.addEventListener('click', ()=>{
+  goBack(); // back to actions
+});
+
+/* Backdrop behavior:
+   - If you are in a sub-box: go back to previous box
+   - If you are in the main slots box: close the modal */
+slotBackdrop.addEventListener('click', ()=>{
+  if(currentPanel === 'slots'){
+    closeSlots();
+  }else{
+    goBack();
+  }
+});
+
+/* Slots CLOSE closes the whole modal */
+btnSlotsClose.addEventListener('click', closeSlots);
 
 /* START GAME opens slots */
 btnNew.addEventListener('click', openSlots);
@@ -843,6 +922,7 @@ function runTitleSequence(){
 
   }, BLACK_HOLD_MS);
 }
+
 
 
 
