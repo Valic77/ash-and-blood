@@ -923,27 +923,83 @@ function draw(){
 /* ---------------------------------------------------------------------------
 [009] TITLE FLOW + SAVE SLOTS (black -> title -> menu)
 --------------------------------------------------------------------------- */
-const curtain = document.getElementById('curtain');
-const bootScreen = document.getElementById('bootScreen');
+
+/* Core UI */
 const titleScreen = document.getElementById('titleScreen');
-const mainMenu = document.getElementById('mainMenu');
+const curtain     = document.getElementById('curtain');
+const mainMenu    = document.getElementById('mainMenu');
+const btnNew      = document.getElementById('btnNew');
+const btnOptions  = document.getElementById('btnOptions');
 
-const slotModal = document.getElementById('slotModal');
-const slotBackdrop = slotModal.querySelector('.backdrop');
-const panelSlots = document.getElementById('panelSlots');
-const panelName = document.getElementById('panelName');
-const panelExisting = document.getElementById('panelExisting');
+/* Save Slots UI */
+const slotModal     = document.getElementById('slotModal');
+const slotBackdrop  = slotModal ? slotModal.querySelector('.slot-backdrop') : null;
+const slotList      = document.getElementById('slotList');
 
+const panelSlots    = document.getElementById('panelSlots');
+const panelName     = document.getElementById('panelName');
+const panelActions  = document.getElementById('panelActions');
+const panelConfirm  = document.getElementById('panelConfirm');
+
+const nameInput     = document.getElementById('nameInput');
+const actionTitle   = document.getElementById('actionTitle');
+
+const btnSlotsClose   = document.getElementById('btnSlotsClose');
+const btnNameConfirm  = document.getElementById('btnNameConfirm');
+const btnNameCancel   = document.getElementById('btnNameCancel');
+
+const btnLoadSlot     = document.getElementById('btnLoadSlot');
+const btnDeleteSlot   = document.getElementById('btnDeleteSlot');
+const btnActionsClose = document.getElementById('btnActionsClose');
+
+const btnDeleteYes    = document.getElementById('btnDeleteYes');
+const btnDeleteNo     = document.getElementById('btnDeleteNo');
+const btnConfirmClose = document.getElementById('btnConfirmClose');
+
+/* Options / modals (optional) */
 const optionsModal = document.getElementById('optionsModal');
 const confirmModal = document.getElementById('confirmModal');
-const alertModal = document.getElementById('alertModal');
+const alertModal   = document.getElementById('alertModal');
 
+/* ---------------------------------------------------------------------------
+Mobile-safe tap binding (fixes “dead button” on Android)
+--------------------------------------------------------------------------- */
+function bindTap(el, fn){
+  if(!el) return;
+
+  let locked = false;
+  const run = (e)=>{
+    // prevent ghost clicks / double fire
+    if(locked) return;
+    locked = true;
+    setTimeout(()=>{ locked = false; }, 250);
+
+    try{
+      if(e){
+        e.preventDefault?.();
+        e.stopPropagation?.();
+      }
+    }catch(_){}
+
+    try{ fn(); }catch(err){
+      // fail silently in production; prevents total UI death
+      console.warn('Tap handler error:', err);
+    }
+  };
+
+  el.addEventListener('pointerup', run, {passive:false});
+  el.addEventListener('touchend', run, {passive:false});
+  el.addEventListener('click', run);
+}
+
+/* ---------------------------------------------------------------------------
+Title sequence timers
+--------------------------------------------------------------------------- */
 let titleTimers = [];
 function clearTitleTimers(){
   for(const t of titleTimers) clearTimeout(t);
   titleTimers.length = 0;
 }
-
 function schedule(fn, ms){
   const t = setTimeout(fn, ms);
   titleTimers.push(t);
@@ -951,11 +1007,13 @@ function schedule(fn, ms){
 }
 
 function showCurtain(ms=0, delay=0){
+  if(!curtain) return;
   document.documentElement.style.setProperty('--curtain-ms', ms+'ms');
   document.documentElement.style.setProperty('--curtain-delay-ms', delay+'ms');
   curtain.classList.remove('off'); // black
 }
 function hideCurtain(ms=0, delay=0){
+  if(!curtain) return;
   document.documentElement.style.setProperty('--curtain-ms', ms+'ms');
   document.documentElement.style.setProperty('--curtain-delay-ms', delay+'ms');
   curtain.classList.add('off'); // transparent
@@ -965,195 +1023,179 @@ function hideCurtain(ms=0, delay=0){
 function runTitleSequence(){
   clearTitleTimers();
 
-  // Start at black
   showCurtain(0,0);
 
-  // Hide title/menu
-  titleScreen.classList.remove('show');
-  mainMenu.classList.remove('show');
-  titleScreen.classList.remove('hard-off');
-  titleScreen.style.display = 'flex';
+  if(titleScreen){
+    titleScreen.classList.remove('show');
+    titleScreen.classList.remove('hard-off');
+    titleScreen.style.display = 'flex';
+  }
+  if(mainMenu) mainMenu.classList.remove('show');
 
-  // Boot screen briefly
-  bootScreen.classList.remove('off');
+  const bootScreen = document.getElementById('bootScreen');
+  if(bootScreen) bootScreen.classList.remove('off');
+  schedule(()=> bootScreen && bootScreen.classList.add('off'), 220);
 
-  // Boot off quickly
-  schedule(()=> bootScreen.classList.add('off'), 220);
-
-  // Fade in title background
   schedule(()=>{
-    titleScreen.classList.add('show');
-    hideCurtain(850, 0); // reveal title
+    titleScreen && titleScreen.classList.add('show');
+    hideCurtain(850, 0);
   }, 260);
 
-  // After title is visible, fade in menu buttons
   schedule(()=>{
-    mainMenu.classList.add('show');
-    ensureTitleMusic(); // start/fade title music
+    mainMenu && mainMenu.classList.add('show');
+    if(typeof ensureTitleMusic === 'function') ensureTitleMusic();
   }, 1200);
 }
 
-/* Slot modal helpers */
-function showSlots(){
-  slotModal.classList.add('show');
-  showPanel(panelSlots);
+/* ---------------------------------------------------------------------------
+Slots: panels
+--------------------------------------------------------------------------- */
+let selectedSlot = null;
+let currentPanel = 'slots';
+let previousPanel = 'slots';
+const SLOT_COUNT = 5;
+
+function hideAllPanels(){
+  panelSlots && panelSlots.classList.remove('show');
+  panelName && panelName.classList.remove('show');
+  panelActions && panelActions.classList.remove('show');
+  panelConfirm && panelConfirm.classList.remove('show');
 }
+
+function showPanel(which){
+  hideAllPanels();
+  currentPanel = which;
+
+  if(which === 'slots')   panelSlots && panelSlots.classList.add('show');
+  if(which === 'name')    panelName && panelName.classList.add('show');
+  if(which === 'actions') panelActions && panelActions.classList.add('show');
+  if(which === 'confirm') panelConfirm && panelConfirm.classList.add('show');
+}
+
+function openSlots(){
+  selectedSlot = null;
+  previousPanel = 'slots';
+  showPanel('slots');
+  rebuildSlotList();
+  slotModal && slotModal.classList.add('show');
+}
+
 function closeSlots(){
-  slotModal.classList.remove('show');
+  slotModal && slotModal.classList.remove('show');
+  selectedSlot = null;
+  previousPanel = 'slots';
+  currentPanel = 'slots';
+  if(nameInput) nameInput.value = '';
 }
 
-function showPanel(panel){
-  for(const p of [panelSlots, panelName, panelExisting]){
-    p.classList.remove('show');
-  }
-  panel.classList.add('show');
+/* Save helpers (expected to exist elsewhere; safe fallback) */
+function slotKey(i){ return `AAB_SAVE_${i}`; }
+function slotHasSave(i){
+  try{
+    const raw = localStorage.getItem(slotKey(i));
+    return !!raw;
+  }catch(_){ return false; }
+}
+function getSlotName(i){
+  try{
+    const raw = localStorage.getItem(slotKey(i));
+    if(!raw) return '';
+    const data = JSON.parse(raw);
+    return (data && data.name) ? String(data.name) : '';
+  }catch(_){ return ''; }
 }
 
-slotBackdrop.addEventListener('click', ()=>{
-  closeSlots();
-});
+/* Build slot buttons */
+function rebuildSlotList(){
+  if(!slotList) return;
+  slotList.innerHTML = '';
 
-/* Main menu buttons */
-document.getElementById('btnNew').addEventListener('click', ()=>{
-  showSlots();
-});
+  for(let i=1;i<=SLOT_COUNT;i++){
+    const nm = getSlotName(i);
+    const has = slotHasSave(i);
 
-document.getElementById('btnLoad').addEventListener('click', ()=>{
-  openLoadModal();
-});
+    const btn = document.createElement('button');
+    btn.className = 'menu-btn';
+    btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
 
-/* Slot selection */
-panelSlots.addEventListener('click', (e)=>{
-  const b = e.target.closest('[data-slot]');
-  if(!b) return;
-  const slot = Number(b.getAttribute('data-slot'));
-  if(!Number.isFinite(slot)) return;
+    bindTap(btn, ()=>{
+      selectedSlot = i;
 
-  const info = readSaveMeta(slot);
-  if(info && info.name){
-    // existing save
-    window.__selectedSlot = slot;
-    renderExistingPanel(info);
-    showPanel(panelExisting);
-  }else{
-    // new save
-    window.__selectedSlot = slot;
-    showPanel(panelName);
-    document.getElementById('survivorName').value = '';
-    document.getElementById('survivorName').focus();
+      if(nm && has){
+        if(actionTitle) actionTitle.textContent = nm;
+        previousPanel = 'slots';
+        showPanel('actions');
+      }else{
+        previousPanel = 'slots';
+        showPanel('name');
+        if(nameInput){
+          nameInput.value = '';
+          setTimeout(()=>nameInput.focus(), 50);
+        }
+      }
+    });
+
+    slotList.appendChild(btn);
   }
-});
-
-/* Existing save actions */
-document.getElementById('btnLoadSlot').addEventListener('click', ()=>{
-  const slot = window.__selectedSlot || 1;
-  // confirm sound + cinematic entry
-  cinematicIntoGame();
-});
-document.getElementById('btnDeleteSlot').addEventListener('click', ()=>{
-  const slot = window.__selectedSlot || 1;
-  askConfirm('Delete this save?', 'This cannot be undone.', ()=>{
-    deleteSave(slot);
-    showPanel(panelSlots);
-    refreshSlotList();
-  });
-});
-document.getElementById('btnCloseExisting').addEventListener('click', ()=>{
-  showPanel(panelSlots);
-});
-
-/* Name panel actions */
-document.getElementById('btnNameConfirm').addEventListener('click', ()=>{
-  const name = (document.getElementById('survivorName').value || '').trim();
-  if(!name){
-    showAlert('Notice', 'Please enter a name');
-    return;
-  }
-  const slot = window.__selectedSlot || 1;
-  createNewSave(slot, name);
-
-  // confirm sound + cinematic entry
-  cinematicIntoGame();
-});
-document.getElementById('btnNameCancel').addEventListener('click', ()=>{
-  showPanel(panelSlots);
-});
-
-/* Close button */
-document.getElementById('btnCloseSlots').addEventListener('click', ()=>{
-  closeSlots();
-});
+}
 
 /* ---------------------------------------------------------------------------
-CINEMATIC ENTER GAME (fixes blink chain)
+CINEMATIC ENTER GAME (your required flow)
 --------------------------------------------------------------------------- */
 function cinematicIntoGame(){
   clearTitleTimers();
 
-  // ✅ confirmation sound BEFORE any fade
   if(typeof playUiConfirm === 'function') playUiConfirm();
 
-  // small lead so the confirm sound is heard clearly
   const CONFIRM_LEAD_MS = 180;
 
   setTimeout(()=>{
 
-    // 1) Close any open UI (they fade out now)
+    // Close open UI
     closeSlots();
-    if(optionsModal && optionsModal.classList.contains('show')){
-      optionsDirty = false;
-      optionsSnapshot = null;
-      optionsModal.classList.remove('show');
+    if(optionsModal && optionsModal.classList.contains('show')) optionsModal.classList.remove('show');
+    if(confirmModal && confirmModal.classList.contains('show')) confirmModal.classList.remove('show');
+    if(alertModal && alertModal.classList.contains('show')) alertModal.classList.remove('show');
+
+    // Show clean title (no buttons)
+    if(mainMenu) mainMenu.classList.remove('show');
+
+    if(titleScreen){
+      titleScreen.style.display = 'flex';
+      titleScreen.classList.remove('hard-off');
+      titleScreen.classList.add('show');
     }
-    if(confirmModal && confirmModal.classList.contains('show')){
-      confirmModal.classList.remove('show');
-    }
-    if(alertModal && alertModal.classList.contains('show')){
-      alertModal.classList.remove('show');
-    }
 
-    // 2) Show ONLY the title background (no menu buttons)
-    mainMenu.classList.remove('show');
-
-    titleScreen.style.display = 'flex';
-    titleScreen.classList.remove('hard-off');
-    titleScreen.classList.add('show');
-
-    // Ensure we are not already blacked out
-    curtain.style.transition = 'opacity 200ms linear';
-    curtain.classList.add('off');
-
-    // 3) Hold on clean title screen for 2 seconds
+    // Hold 2 seconds on clean title
     const HOLD_ON_TITLE_MS = 2000;
 
     setTimeout(()=>{
 
-      // 4) Cinematically fade to black + fade title music
       const FADE_TO_BLACK_MS = 1200;
 
-      curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
-      curtain.classList.remove('off');
+      if(curtain){
+        curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
+        curtain.classList.remove('off');
+      }
+      if(typeof fadeOutTitleMusic === 'function') fadeOutTitleMusic(FADE_TO_BLACK_MS);
 
-      fadeOutTitleMusic(FADE_TO_BLACK_MS);
-
-      // 5) Once fully black: stop title/music + remove title overlay, then generate world
       setTimeout(()=>{
 
-        stopTitleMusic();
+        if(typeof stopTitleMusic === 'function') stopTitleMusic();
 
-        titleScreen.classList.add('hard-off');
-        titleScreen.style.display = 'none';
+        if(titleScreen){
+          titleScreen.classList.add('hard-off');
+          titleScreen.style.display = 'none';
+        }
 
-        // Begin gameplay generation (may return a Promise)
         let maybePromise = null;
-        try{ maybePromise = startGameplay(); }catch(e){ maybePromise = null; }
+        try{ maybePromise = (typeof startGameplay === 'function') ? startGameplay() : null; }catch(e){ maybePromise = null; }
 
         Promise.resolve(maybePromise).then(()=>{
-
-          // 6) World ready: fade in from black
-          curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
-          curtain.classList.add('off');
-
+          if(curtain){
+            curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
+            curtain.classList.add('off');
+          }
         });
 
       }, FADE_TO_BLACK_MS + 60);
@@ -1162,6 +1204,55 @@ function cinematicIntoGame(){
 
   }, CONFIRM_LEAD_MS);
 }
+
+/* ---------------------------------------------------------------------------
+Wire up buttons (START must NEVER be dead)
+--------------------------------------------------------------------------- */
+bindTap(btnNew, openSlots);
+bindTap(btnOptions, ()=>{ if(optionsModal) optionsModal.classList.add('show'); });
+
+bindTap(btnSlotsClose, closeSlots);
+if(slotBackdrop) bindTap(slotBackdrop, closeSlots);
+
+bindTap(btnNameCancel, ()=>{ previousPanel='slots'; showPanel('slots'); });
+
+bindTap(btnNameConfirm, ()=>{
+  const nm = (nameInput ? nameInput.value : '').trim();
+  if(!nm){
+    if(typeof showAlert === 'function') showAlert('NOTICE', 'Please enter a name');
+    return;
+  }
+  const slot = selectedSlot || 1;
+  if(typeof createNewSave === 'function') createNewSave(slot, nm);
+  else{
+    // minimal fallback save so flow works even if createNewSave missing
+    try{ localStorage.setItem(slotKey(slot), JSON.stringify({name:nm, t:Date.now()})); }catch(_){}
+  }
+  cinematicIntoGame();
+});
+
+bindTap(btnLoadSlot, cinematicIntoGame);
+
+bindTap(btnActionsClose, ()=>{ showPanel('slots'); });
+
+bindTap(btnDeleteSlot, ()=>{ showPanel('confirm'); });
+
+bindTap(btnDeleteYes, ()=>{
+  const slot = selectedSlot || 1;
+  if(typeof deleteSave === 'function') deleteSave(slot);
+  else{
+    try{ localStorage.removeItem(slotKey(slot)); }catch(_){}
+  }
+  showPanel('slots');
+  rebuildSlotList();
+});
+
+bindTap(btnDeleteNo, ()=>{ showPanel('actions'); });
+bindTap(btnConfirmClose, ()=>{ showPanel('actions'); });
+
+/* Kick title */
+runTitleSequence();
+
 
 
 
