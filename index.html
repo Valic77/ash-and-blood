@@ -188,6 +188,8 @@ canvas.show{ opacity:1; }
   display:none;
 }
 
+
+
 /* ---------------------------------------------------------------------------
 [000.6] SAVE SLOTS PANEL STYLES
 --------------------------------------------------------------------------- */
@@ -233,36 +235,30 @@ canvas.show{ opacity:1; }
   background:rgba(14,18,26,.86);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 18px 60px rgba(0,0,0,.6);
+
+  /* ✅ panel-to-panel fades (no display:none) */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:
+    opacity var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1),
+    transform var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1);
+}
+#slotModal .slot-panel.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transform:translate(-50%,-50%);
 }
 
-/* Hide all panels by default; JS shows one at a time */
-#slotModal .slot-panel{ display:none; }
-#slotModal .slot-panel.show{ display:block; }
-
-.slot-title{
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  text-align:center;
-  margin-bottom:12px;
+/* ✅ Panel buttons must fit uniformly inside the box */
+#slotModal .slot-panel .menu-btn{
+  width:100% !important;
+  margin:0 !important;
+  box-sizing:border-box;
 }
 
-.slot-subtitle{
-  font-weight:800;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  text-align:center;
-  margin:10px 0 8px 0;
-  opacity:.95;
-}
-
-#slotList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin:10px 0 14px 0;
-}
-
+/* Input */
 #nameInput{
   width:100%;
   box-sizing:border-box;
@@ -283,12 +279,12 @@ canvas.show{ opacity:1; }
   margin:14px 0;
 }
 .slot-row .menu-btn{
-  width:100%;
+  width:100% !important;
 }
 
 /* ✅ Close buttons inside panels should sit below rows with spacing */
 #slotModal .slot-panel > .menu-btn{
-  margin-top:14px;
+  margin-top:14px !important;
 }
 
 /* Divider: centered, same width as buttons */
@@ -299,6 +295,7 @@ canvas.show{ opacity:1; }
   opacity:.9;
   margin:12px 0;
 }
+
 
 
 
@@ -348,6 +345,13 @@ canvas.show{ opacity:1; }
   box-shadow:0 18px 60px rgba(0,0,0,.6);
 }
 
+/* ✅ Options buttons fit inside */
+#optionsModal .options-panel .menu-btn{
+  width:100% !important;
+  margin:0 !important;
+  box-sizing:border-box;
+}
+
 .options-row{
   display:flex;
   align-items:center;
@@ -369,15 +373,29 @@ canvas.show{ opacity:1; }
   text-align:right;
   font-weight:900;
   letter-spacing:.06em;
-  opacity:.95;
 }
 
-.option-toggle{
-  width:96px !important;
-  margin:0 !important;
-  padding:12px 10px !important;
+.options-actions{
+  display:flex;
+  gap:14px;
+  margin-top:14px;
 }
-.option-toggle.off{ opacity:.75; }
+.options-actions .menu-btn{
+  width:100% !important;
+}
+
+/* Toggle button look */
+.option-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.option-toggle.off{
+  opacity:.7;
+  filter:saturate(.6);
+}
+
 
 
 
@@ -480,6 +498,9 @@ canvas.show{ opacity:1; }
   width:100%;
 }
 
+
+
+
 /* ---------------------------------------------------------------------------
 [000.9] CONFIRM MODAL STYLES (Apply Changes)
 --------------------------------------------------------------------------- */
@@ -532,8 +553,12 @@ canvas.show{ opacity:1; }
   gap:14px;
 }
 #confirmModal .confirm-row .menu-btn{
-  width:100%;
+  width:100% !important;
+  margin:0 !important;
 }
+
+
+
 
 /* ---------------------------------------------------------------------------
 [000.10] ALERT MODAL STYLES (in-game replacement for alert())
@@ -581,13 +606,11 @@ canvas.show{ opacity:1; }
   box-shadow:0 18px 60px rgba(0,0,0,.6);
 }
 
-#alertModal .alert-msg{
-  text-align:center;
-  font-weight:800;
-  letter-spacing:.06em;
-  margin:10px 0 14px 0;
-  opacity:.95;
+#btnAlertOk{
+  margin-top:14px;
+  width:100% !important;
 }
+
 
 
 
@@ -952,7 +975,7 @@ const confirmBackdrop = confirmModal ? confirmModal.querySelector('.confirm-back
 const btnConfirmYes   = document.getElementById('btnConfirmYes');
 const btnConfirmNo    = document.getElementById('btnConfirmNo');
 
-/* ALERT MODAL */
+/* ALERT MODAL (NEW) */
 const alertModal      = document.getElementById('alertModal');
 const alertBackdrop   = alertModal ? alertModal.querySelector('.alert-backdrop') : null;
 const alertMsgEl      = document.getElementById('alertMsg');
@@ -968,7 +991,7 @@ let optionsDirty = false;
 let optionsSnapshot = null; // { vol:number(0..1) }
 
 function getVolSafe(){
-  const v = (typeof getMusicVolume === 'function') ? +getMusicVolume() : 0.5;
+  const v = (typeof getTitleMusicVolume === 'function') ? +getTitleMusicVolume() : 0.5;
   return (Number.isFinite(v) ? clamp(v,0,1) : 0.5);
 }
 function isMusicOnByVol(v01){ return v01 > MUSIC_ON_THRESHOLD; }
@@ -1050,7 +1073,7 @@ function closeOptionsWithPrompt(){
   if(!optionsModal) return;
 
   if(!optionsDirty){
-    optionsModal.classList.remove('show'); // ✅ fades now
+    optionsModal.classList.remove('show');
     return;
   }
 
@@ -1059,16 +1082,16 @@ function closeOptionsWithPrompt(){
     ()=>{
       optionsDirty = false;
       optionsSnapshot = null;
-      optionsModal.classList.remove('show'); // ✅ fades now
+      optionsModal.classList.remove('show');
     },
     // NO: revert snapshot
     ()=>{
       if(optionsSnapshot){
-        if(typeof setMusicVolume === 'function') setMusicVolume(optionsSnapshot.vol);
+        if(typeof setTitleMusicVolume === 'function') setTitleMusicVolume(optionsSnapshot.vol);
       }
       optionsDirty = false;
       optionsSnapshot = null;
-      optionsModal.classList.remove('show'); // ✅ fades now
+      optionsModal.classList.remove('show');
     }
   );
 }
@@ -1086,8 +1109,8 @@ if(musicVol){
     const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
     if(musicVolLabel) musicVolLabel.textContent = pct + '%';
 
-    if(typeof setMusicVolume === 'function'){
-      setMusicVolume(pct / 100);
+    if(typeof setTitleMusicVolume === 'function'){
+      setTitleMusicVolume(pct / 100);
       optionsDirty = true;
       syncOptionsUI();
     }
@@ -1097,12 +1120,12 @@ if(musicVol){
 /* Toggle coupling */
 if(musicToggleBtn){
   musicToggleBtn.addEventListener('click', ()=>{
-    if(typeof setMusicEnabled !== 'function' || typeof getMusicVolume !== 'function') return;
+    if(typeof setTitleMusicEnabled !== 'function' || typeof getTitleMusicVolume !== 'function') return;
 
     const vol01 = getVolSafe();
     const currentlyOn = isMusicOnByVol(vol01);
 
-    setMusicEnabled(!currentlyOn);
+    setTitleMusicEnabled(!currentlyOn);
     optionsDirty = true;
     syncOptionsUI();
   });
@@ -1192,10 +1215,10 @@ function openSlots(){
   previousPanel = 'slots';
   showPanel('slots');
   rebuildSlotList();
-  slotModal.classList.add('show'); // ✅ fades in now
+  slotModal.classList.add('show');
 }
 function closeSlots(){
-  slotModal.classList.remove('show'); // ✅ fades out now
+  slotModal.classList.remove('show');
   selectedSlot = null;
   previousPanel = 'slots';
   currentPanel = 'slots';
@@ -1233,59 +1256,57 @@ function rebuildSlotList(){
   }
 }
 
-/* Cinematic transition into game */
+/* Cinematic transition into game (per spec) */
 function cinematicIntoGame(){
   clearTitleTimers();
 
-  // ✅ confirmation sound BEFORE fade-to-black
-  if(typeof playUiConfirm === 'function') playUiConfirm();
+  // 1) play confirm sound (if available)
+  try{ if(typeof playUiConfirm === 'function') playUiConfirm(); }catch(e){}
 
-  // small delay so the confirm sound is heard clearly
-  const CONFIRM_LEAD_MS = 180;
+  // 2) Close any open modals (they fade now)
+  closeSlots();
+  if(optionsModal && optionsModal.classList.contains('show')){
+    optionsDirty = false;
+    optionsSnapshot = null;
+    optionsModal.classList.remove('show');
+  }
+  if(confirmModal && confirmModal.classList.contains('show')) confirmModal.classList.remove('show');
+  if(alertModal && alertModal.classList.contains('show')) alertModal.classList.remove('show');
+
+  // 3) Ensure we are showing TITLE BACKGROUND ONLY (no overlays)
+  mainMenu.classList.remove('show');
+  titleScreen.style.display = 'flex';
+  titleScreen.classList.remove('hard-off');
+  titleScreen.classList.add('show'); // background visible
+
+  // 4) After 2s, fade to black + fade out title music
+  const HOLD_ON_TITLE_MS = 2000;
+  const FADE_TO_BLACK_MS = 1100;
 
   setTimeout(()=>{
-    curtain.style.transition = 'opacity 900ms linear';
-    curtain.classList.remove('off');
+    curtain.style.transition = `opacity ${FADE_TO_BLACK_MS}ms cubic-bezier(0.2,0,0.2,1)`;
+    curtain.classList.remove('off'); // fade to black
 
-    fadeOutMenuMusic(900);
+    if(typeof fadeOutTitleMusic === 'function') fadeOutTitleMusic(FADE_TO_BLACK_MS);
 
-    closeSlots();
-    if(optionsModal && optionsModal.classList.contains('show')){
-      optionsDirty = false;
-      optionsSnapshot = null;
-      optionsModal.classList.remove('show'); // ✅ fades out now
-    }
-
-    // Start fading title/menu out (no snap)
-    mainMenu.classList.remove('show');
-    titleScreen.classList.remove('show');
-
-    // ✅ after a short fade window, hard-kill overlay to prevent bleed-through
+    // 5) Once black, kill title visuals + stop music hard
     setTimeout(()=>{
+      // hard kill title overlay so it cannot bleed into gameplay
       titleScreen.classList.add('hard-off');
       titleScreen.style.display = 'none';
-    }, 260);
 
-    const MIN_BLACK_MS = 2000;
-    const FADE_TO_BLACK_MS = 900;
-    const blackAt = performance.now() + FADE_TO_BLACK_MS;
+      try{ if(typeof stopTitleMusic === 'function') stopTitleMusic(); }catch(e){}
 
-    setTimeout(()=>{
+      // 6) Start gameplay/world generation; when ready, fade in from black
       let maybePromise = null;
       try{ maybePromise = startGameplay(); }catch(e){ maybePromise = null; }
 
-      const waitMinBlack = new Promise(res=>{
-        const remaining = Math.max(0, (blackAt + MIN_BLACK_MS) - performance.now());
-        setTimeout(res, remaining);
+      Promise.resolve(maybePromise).then(()=>{
+        curtain.style.transition = 'opacity 1400ms cubic-bezier(0.2,0,0.2,1)';
+        curtain.classList.add('off'); // reveal gameplay from black
       });
-
-      Promise.resolve(maybePromise).then(()=>waitMinBlack).then(()=>{
-        curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
-        curtain.classList.add('off');
-      });
-    }, FADE_TO_BLACK_MS + 50);
-
-  }, CONFIRM_LEAD_MS);
+    }, FADE_TO_BLACK_MS + 40);
+  }, HOLD_ON_TITLE_MS);
 }
 
 /* NAME panel actions */
@@ -1395,6 +1416,7 @@ function runTitleSequence(){
 
 
 
+
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
 --------------------------------------------------------------------------- */
@@ -1415,82 +1437,84 @@ function startGameplay(){
   requestAnimationFrame(loop);
 }
 
+
+
+
 /* ---------------------------------------------------------------------------
-[011] AUDIO: BOOT SCREEN → MENU MUSIC (delay + gain fade, no pop, no cut)
+[011] AUDIO: BOOT SCREEN → TITLE MUSIC (delay + gain fade, no pop, no cut)
 --------------------------------------------------------------------------- */
 
 /* FILE PATH (matches your repo structure) */
-const MENU_MUSIC_SRC = 'audio/menu.mp3';
+const TITLE_MUSIC_SRC = 'audio/title.mp3';
 
 /* Defaults */
-const MENU_MUSIC_DEFAULT_GAIN = 0.50;  // 0.0–1.0
+const TITLE_MUSIC_DEFAULT_GAIN = 0.50;  // 0.0–1.0
 
 /* Settings keys (persisted) */
 const OPT_MUSIC_VOL_KEY   = 'AAB_OPT_MUSIC_VOL';
-const OPT_MUSIC_LAST_KEY  = 'AAB_OPT_MUSIC_LAST'; // ✅ last non-zero
+const OPT_MUSIC_LAST_KEY  = 'AAB_OPT_MUSIC_LAST'; // last non-zero
 
 let audioCtx = null;
-let menuBuf  = null;
-let menuSrc  = null;
-let menuGain = null;
+let titleBuf  = null;
+let titleSrc  = null;
+let titleGain = null;
 
-let musicVolume = MENU_MUSIC_DEFAULT_GAIN;       // current applied volume (0..1)
-let lastNonZeroMusicVolume = MENU_MUSIC_DEFAULT_GAIN;
+let titleMusicVolume = TITLE_MUSIC_DEFAULT_GAIN;       // current applied volume (0..1)
+let lastNonZeroTitleMusicVolume = TITLE_MUSIC_DEFAULT_GAIN;
 
 /* --------------------------
-   Settings (global music via volume)
+   Settings (global title music via volume)
 -------------------------- */
 function loadAudioPrefs(){
   const rawVol = localStorage.getItem(OPT_MUSIC_VOL_KEY);
   if(rawVol != null){
     const v = Number(rawVol);
-    if(Number.isFinite(v)) musicVolume = Math.max(0, Math.min(1, v));
+    if(Number.isFinite(v)) titleMusicVolume = Math.max(0, Math.min(1, v));
   }
 
   const rawLast = localStorage.getItem(OPT_MUSIC_LAST_KEY);
   if(rawLast != null){
     const v = Number(rawLast);
-    if(Number.isFinite(v)) lastNonZeroMusicVolume = Math.max(0, Math.min(1, v));
+    if(Number.isFinite(v)) lastNonZeroTitleMusicVolume = Math.max(0, Math.min(1, v));
   }
 
-  // If no lastNonZero stored yet and current is >0, treat current as lastNonZero
-  if(musicVolume > 0.001) lastNonZeroMusicVolume = musicVolume;
+  if(titleMusicVolume > 0.001) lastNonZeroTitleMusicVolume = titleMusicVolume;
 }
 
 function saveAudioPrefs(){
-  localStorage.setItem(OPT_MUSIC_VOL_KEY, String(musicVolume));
-  localStorage.setItem(OPT_MUSIC_LAST_KEY, String(lastNonZeroMusicVolume));
+  localStorage.setItem(OPT_MUSIC_VOL_KEY, String(titleMusicVolume));
+  localStorage.setItem(OPT_MUSIC_LAST_KEY, String(lastNonZeroTitleMusicVolume));
 }
 
 /* Exposed helpers for [009] Options panel */
-function getMusicVolume(){ return musicVolume; }
+function getTitleMusicVolume(){ return titleMusicVolume; }
 
 /* Set volume (this is the real “mute”) */
-function setMusicVolume(vol01){
+function setTitleMusicVolume(vol01){
   const v = Number(vol01);
   if(!Number.isFinite(v)) return;
 
-  musicVolume = Math.max(0, Math.min(1, v));
+  titleMusicVolume = Math.max(0, Math.min(1, v));
 
   // Track last non-zero
-  if(musicVolume > 0.001){
-    lastNonZeroMusicVolume = musicVolume;
+  if(titleMusicVolume > 0.001){
+    lastNonZeroTitleMusicVolume = titleMusicVolume;
   }
 
   saveAudioPrefs();
-  applyMenuMusicState();
+  applyTitleMusicState();
 }
 
 /* Toggle ON/OFF:
    OFF => volume becomes 0 (slider should show 0)
    ON  => restore lastNonZero (or default 50% if none)
 */
-function setMusicEnabled(on){
+function setTitleMusicEnabled(on){
   if(on){
-    const restore = (lastNonZeroMusicVolume > 0.001) ? lastNonZeroMusicVolume : MENU_MUSIC_DEFAULT_GAIN;
-    setMusicVolume(restore);
+    const restore = (lastNonZeroTitleMusicVolume > 0.001) ? lastNonZeroTitleMusicVolume : TITLE_MUSIC_DEFAULT_GAIN;
+    setTitleMusicVolume(restore);
   }else{
-    setMusicVolume(0);
+    setTitleMusicVolume(0);
   }
 }
 
@@ -1504,12 +1528,12 @@ function ensureAudio(){
   return true;
 }
 
-async function loadMenuBuffer(){
-  if(menuBuf) return;
-  const res = await fetch(MENU_MUSIC_SRC, { cache:'no-store' });
+async function loadTitleBuffer(){
+  if(titleBuf) return;
+  const res = await fetch(TITLE_MUSIC_SRC, { cache:'no-store' });
   if(!res.ok) throw new Error('fetch failed: ' + res.status);
   const ab = await res.arrayBuffer();
-  menuBuf = await audioCtx.decodeAudioData(ab);
+  titleBuf = await audioCtx.decodeAudioData(ab);
 }
 
 function readCssMs(varName, fallbackMs){
@@ -1525,12 +1549,12 @@ function readCssMs(varName, fallbackMs){
   }
 }
 
-function stopMenuMusic(){
-  try{ menuSrc && menuSrc.stop(); }catch(e){}
-  menuSrc = null;
+function stopTitleMusic(){
+  try{ titleSrc && titleSrc.stop(); }catch(e){}
+  titleSrc = null;
 }
 
-function isMenuVisible(){
+function isTitleMenuVisible(){
   const ts = document.getElementById('titleScreen');
   const mm = document.getElementById('mainMenu');
   if(!ts || !mm) return false;
@@ -1538,100 +1562,95 @@ function isMenuVisible(){
   return ts.classList.contains('show') && mm.classList.contains('show');
 }
 
-/* Start menu loop (used at boot + when enabling while on menu and nothing is running) */
-function startMenuMusicNow(){
-  if(!menuBuf) return;
+/* Start title loop */
+function startTitleMusicNow(){
+  if(!titleBuf) return;
 
-  // Stop any existing to prevent overlap
-  stopMenuMusic();
+  stopTitleMusic();
 
-  if(!menuGain){
-    menuGain = audioCtx.createGain();
-    menuGain.connect(audioCtx.destination);
+  if(!titleGain){
+    titleGain = audioCtx.createGain();
+    titleGain.connect(audioCtx.destination);
   }
 
   const now = audioCtx.currentTime;
 
-  menuSrc = audioCtx.createBufferSource();
-  menuSrc.buffer = menuBuf;
-  menuSrc.loop = true;
-  menuSrc.connect(menuGain);
+  titleSrc = audioCtx.createBufferSource();
+  titleSrc.buffer = titleBuf;
+  titleSrc.loop = true;
+  titleSrc.connect(titleGain);
 
-  // Pop-safe
-  menuGain.gain.cancelScheduledValues(now);
-  menuGain.gain.setValueAtTime(0.0, now);
+  titleGain.gain.cancelScheduledValues(now);
+  titleGain.gain.setValueAtTime(0.0, now);
 
-  const target = (musicVolume > 0.001) ? musicVolume : 0.0;
-  menuGain.gain.linearRampToValueAtTime(target, now + 0.06);
+  const target = (titleMusicVolume > 0.001) ? titleMusicVolume : 0.0;
+  titleGain.gain.linearRampToValueAtTime(target, now + 0.06);
 
-  menuSrc.start(now);
+  titleSrc.start(now);
 }
 
-/* Schedule menu music to start after bg fade finishes (first note audible at start) */
-function scheduleMenuMusicStart(delayMs){
-  if(!menuBuf) return;
+/* Schedule title music to start after bg fade finishes */
+function scheduleTitleMusicStart(delayMs){
+  if(!titleBuf) return;
 
-  // Stop existing to prevent overlaps
-  stopMenuMusic();
+  stopTitleMusic();
 
-  if(!menuGain){
-    menuGain = audioCtx.createGain();
-    menuGain.connect(audioCtx.destination);
+  if(!titleGain){
+    titleGain = audioCtx.createGain();
+    titleGain.connect(audioCtx.destination);
   }
 
   const now = audioCtx.currentTime;
   const startAt = now + Math.max(0, delayMs) / 1000;
 
-  menuSrc = audioCtx.createBufferSource();
-  menuSrc.buffer = menuBuf;
-  menuSrc.loop = true;
-  menuSrc.connect(menuGain);
+  titleSrc = audioCtx.createBufferSource();
+  titleSrc.buffer = titleBuf;
+  titleSrc.loop = true;
+  titleSrc.connect(titleGain);
 
-  // Start silent, ramp to current volume (or stay at 0 if muted)
-  menuGain.gain.cancelScheduledValues(now);
-  menuGain.gain.setValueAtTime(0.0, now);
-  menuGain.gain.setValueAtTime(0.0, startAt);
+  titleGain.gain.cancelScheduledValues(now);
+  titleGain.gain.setValueAtTime(0.0, now);
+  titleGain.gain.setValueAtTime(0.0, startAt);
 
-  const target = (musicVolume > 0.001) ? musicVolume : 0.0;
-  menuGain.gain.linearRampToValueAtTime(target, startAt + 0.06);
+  const target = (titleMusicVolume > 0.001) ? titleMusicVolume : 0.0;
+  titleGain.gain.linearRampToValueAtTime(target, startAt + 0.06);
 
-  menuSrc.start(startAt);
+  titleSrc.start(startAt);
 }
 
 /* Apply current global music volume WITHOUT stopping the source */
-function applyMenuMusicState(){
+function applyTitleMusicState(){
   if(!audioCtx) return;
 
-  // If we're on menu, have buffer, and music should be audible but nothing is playing, start it.
-  if(menuBuf && !menuSrc && isMenuVisible()){
-    startMenuMusicNow();
+  if(titleBuf && !titleSrc && isTitleMenuVisible()){
+    startTitleMusicNow();
   }
 
-  if(menuGain){
+  if(titleGain){
     const now = audioCtx.currentTime;
-    const target = (musicVolume > 0.001) ? musicVolume : 0.0;
+    const target = (titleMusicVolume > 0.001) ? titleMusicVolume : 0.0;
 
-    menuGain.gain.cancelScheduledValues(now);
-    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
-    menuGain.gain.linearRampToValueAtTime(target, now + 0.08);
+    titleGain.gain.cancelScheduledValues(now);
+    titleGain.gain.setValueAtTime(titleGain.gain.value, now);
+    titleGain.gain.linearRampToValueAtTime(target, now + 0.08);
   }
 }
 
-/* Leaving menu => fade out and stop menu track (gameplay can start its own music later) */
-function fadeOutMenuMusic(ms){
+/* Leaving title => fade out and stop title track */
+function fadeOutTitleMusic(ms){
   try{
-    if(!audioCtx || !menuGain) return;
+    if(!audioCtx || !titleGain) return;
     const now = audioCtx.currentTime;
 
-    menuGain.gain.cancelScheduledValues(now);
-    menuGain.gain.setValueAtTime(menuGain.gain.value, now);
-    menuGain.gain.linearRampToValueAtTime(0.0, now + (ms/1000));
+    titleGain.gain.cancelScheduledValues(now);
+    titleGain.gain.setValueAtTime(titleGain.gain.value, now);
+    titleGain.gain.linearRampToValueAtTime(0.0, now + (ms/1000));
 
-    setTimeout(()=>stopMenuMusic(), ms + 60);
+    setTimeout(()=>stopTitleMusic(), ms + 60);
   }catch(e){}
 }
 
-async function startMenuSequence(){
+async function startTitleSequence(){
   if(!ensureAudio()) return;
 
   try{ await audioCtx.resume(); }catch(e){}
@@ -1644,9 +1663,9 @@ async function startMenuSequence(){
   runTitleSequence();
 
   try{
-    await loadMenuBuffer();
+    await loadTitleBuffer();
     const bgFadeMs = readCssMs('--bg-in-ms', 6000);
-    scheduleMenuMusicStart(bgFadeMs);
+    scheduleTitleMusicStart(bgFadeMs);
   }catch(e){
     // silent fail (visuals continue)
   }
@@ -1654,8 +1673,9 @@ async function startMenuSequence(){
 
 const bootBtn = document.getElementById('bootStartBtn');
 if(bootBtn){
-  bootBtn.addEventListener('click', startMenuSequence, { once:true });
+  bootBtn.addEventListener('click', startTitleSequence, { once:true });
 }
+
 
 
 
