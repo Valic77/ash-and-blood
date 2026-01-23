@@ -975,165 +975,15 @@ const confirmBackdrop = confirmModal ? confirmModal.querySelector('.confirm-back
 const btnConfirmYes   = document.getElementById('btnConfirmYes');
 const btnConfirmNo    = document.getElementById('btnConfirmNo');
 
-/* ALERT MODAL (NEW) */
+/* ALERT MODAL */
 const alertModal      = document.getElementById('alertModal');
 const alertBackdrop   = alertModal ? alertModal.querySelector('.alert-backdrop') : null;
 const alertMsgEl      = document.getElementById('alertMsg');
 const btnAlertOk      = document.getElementById('btnAlertOk');
 
-/* --------------------------
-   OPTIONS PANEL (staged apply/revert + slider/toggle coupling)
--------------------------- */
-function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-const MUSIC_ON_THRESHOLD = 0.001; // internal
-
-let optionsDirty = false;
-let optionsSnapshot = null; // { vol:number(0..1) }
-
-function getVolSafe(){
-  const v = (typeof getTitleMusicVolume === 'function') ? +getTitleMusicVolume() : 0.5;
-  return (Number.isFinite(v) ? clamp(v,0,1) : 0.5);
-}
-function isMusicOnByVol(v01){ return v01 > MUSIC_ON_THRESHOLD; }
-
-function snapshotOptions(){
-  optionsSnapshot = { vol: getVolSafe() };
-  optionsDirty = false;
-}
-
-function syncOptionsUI(){
-  if(!musicVol || !musicToggleBtn) return;
-
-  const vol01 = getVolSafe();
-  const pct = clamp(Math.round(vol01 * 100), 0, 100);
-
-  musicVol.value = String(pct);
-  if(musicVolLabel) musicVolLabel.textContent = pct + '%';
-
-  const on = isMusicOnByVol(vol01);
-  musicToggleBtn.textContent = on ? 'ON' : 'OFF';
-  musicToggleBtn.classList.toggle('off', !on);
-}
-
-/* ✅ in-game confirm modal (no browser prompt) */
-function openConfirmModal(onYes, onNo){
-  if(!confirmModal) return;
-  confirmModal.classList.add('show');
-
-  const cleanup = ()=>{
-    confirmModal.classList.remove('show');
-    btnConfirmYes && btnConfirmYes.removeEventListener('click', yesHandler);
-    btnConfirmNo  && btnConfirmNo.removeEventListener('click', noHandler);
-    confirmBackdrop && confirmBackdrop.removeEventListener('click', noHandler);
-  };
-
-  const yesHandler = ()=>{
-    cleanup();
-    if(typeof onYes === 'function') onYes();
-  };
-  const noHandler = ()=>{
-    cleanup();
-    if(typeof onNo === 'function') onNo();
-  };
-
-  btnConfirmYes && btnConfirmYes.addEventListener('click', yesHandler);
-  btnConfirmNo  && btnConfirmNo.addEventListener('click', noHandler);
-  confirmBackdrop && confirmBackdrop.addEventListener('click', noHandler);
-}
-
-/* ✅ in-game alert modal (replaces alert()) */
-function openAlertModal(message, onOk){
-  if(!alertModal) return;
-  if(alertMsgEl) alertMsgEl.textContent = message || 'Notice';
-  alertModal.classList.add('show');
-
-  const cleanup = ()=>{
-    alertModal.classList.remove('show');
-    btnAlertOk && btnAlertOk.removeEventListener('click', okHandler);
-    alertBackdrop && alertBackdrop.removeEventListener('click', okHandler);
-  };
-
-  const okHandler = ()=>{
-    cleanup();
-    if(typeof onOk === 'function') onOk();
-  };
-
-  btnAlertOk && btnAlertOk.addEventListener('click', okHandler);
-  alertBackdrop && alertBackdrop.addEventListener('click', okHandler);
-}
-
-function openOptions(){
-  if(!optionsModal) return;
-  snapshotOptions();
-  syncOptionsUI();
-  optionsModal.classList.add('show');
-}
-
-function closeOptionsWithPrompt(){
-  if(!optionsModal) return;
-
-  if(!optionsDirty){
-    optionsModal.classList.remove('show');
-    return;
-  }
-
-  openConfirmModal(
-    // YES: keep current settings (already live-previewed)
-    ()=>{
-      optionsDirty = false;
-      optionsSnapshot = null;
-      optionsModal.classList.remove('show');
-    },
-    // NO: revert snapshot
-    ()=>{
-      if(optionsSnapshot){
-        if(typeof setTitleMusicVolume === 'function') setTitleMusicVolume(optionsSnapshot.vol);
-      }
-      optionsDirty = false;
-      optionsSnapshot = null;
-      optionsModal.classList.remove('show');
-    }
-  );
-}
-
-if(optionsBackdrop){
-  optionsBackdrop.addEventListener('click', closeOptionsWithPrompt);
-}
-if(btnOptionsClose){
-  btnOptionsClose.addEventListener('click', closeOptionsWithPrompt);
-}
-
-/* Slider coupling */
-if(musicVol){
-  musicVol.addEventListener('input', ()=>{
-    const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
-    if(musicVolLabel) musicVolLabel.textContent = pct + '%';
-
-    if(typeof setTitleMusicVolume === 'function'){
-      setTitleMusicVolume(pct / 100);
-      optionsDirty = true;
-      syncOptionsUI();
-    }
-  });
-}
-
-/* Toggle coupling */
-if(musicToggleBtn){
-  musicToggleBtn.addEventListener('click', ()=>{
-    if(typeof setTitleMusicEnabled !== 'function' || typeof getTitleMusicVolume !== 'function') return;
-
-    const vol01 = getVolSafe();
-    const currentlyOn = isMusicOnByVol(vol01);
-
-    setTitleMusicEnabled(!currentlyOn);
-    optionsDirty = true;
-    syncOptionsUI();
-  });
-}
-
 /* SAVE SLOTS UI */
 const slotModal      = document.getElementById('slotModal');
-const slotBackdrop   = slotModal.querySelector('.slot-backdrop');
+const slotBackdrop   = slotModal ? slotModal.querySelector('.slot-backdrop') : null;
 
 const panelSlots     = document.getElementById('panelSlots');
 const panelName      = document.getElementById('panelName');
@@ -1159,19 +1009,169 @@ const btnConfirmClose = document.getElementById('btnConfirmClose');
 /* YOU can change this later */
 const SLOT_COUNT = 5;
 
-/* State */
-let selectedSlot = null;
-let currentPanel = 'slots';
-let previousPanel = 'slots';
+/* ---------------------------------------------------------------------------
+Mobile-safe tap binding + ghost-click guard (prevents “dead buttons” on Android)
+--------------------------------------------------------------------------- */
+function bindTap(el, fn){
+  if(!el) return;
 
-/* Title timers */
+  let locked = false;
+  const run = (e)=>{
+    if(locked) return;
+    locked = true;
+    setTimeout(()=>{ locked = false; }, 220);
+
+    try{
+      e && e.preventDefault && e.preventDefault();
+      e && e.stopPropagation && e.stopPropagation();
+    }catch(_){}
+
+    try{ fn(); }catch(err){
+      console.warn('Tap handler error:', err);
+    }
+  };
+
+  el.addEventListener('pointerup', run, {passive:false});
+  el.addEventListener('touchend', run, {passive:false});
+  el.addEventListener('click', run);
+}
+
+/* Stop modal clicks from ever “bleeding” into title menu */
+if(slotModal){
+  slotModal.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); }, {passive:true});
+  slotModal.addEventListener('click', (e)=>{ e.stopPropagation(); });
+}
+
+/* ---------------------------------------------------------------------------
+Title timers
+--------------------------------------------------------------------------- */
 let titleTimers = [];
 function clearTitleTimers(){
   for(const id of titleTimers) clearTimeout(id);
   titleTimers = [];
 }
 
-/* Storage keys */
+/* ---------------------------------------------------------------------------
+Options panel logic (unchanged behavior)
+--------------------------------------------------------------------------- */
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+const MUSIC_ON_THRESHOLD = 0.001;
+
+let optionsDirty = false;
+let optionsSnapshot = null;
+
+function getVolSafe(){
+  const v = (typeof getTitleMusicVolume === 'function') ? +getTitleMusicVolume() : 0.5;
+  return (Number.isFinite(v) ? clamp(v,0,1) : 0.5);
+}
+function isMusicOnByVol(v01){ return v01 > MUSIC_ON_THRESHOLD; }
+
+function snapshotOptions(){
+  optionsSnapshot = { vol: getVolSafe() };
+  optionsDirty = false;
+}
+function syncOptionsUI(){
+  if(!musicVol || !musicToggleBtn) return;
+
+  const vol01 = getVolSafe();
+  const pct = clamp(Math.round(vol01 * 100), 0, 100);
+
+  musicVol.value = String(pct);
+  if(musicVolLabel) musicVolLabel.textContent = pct + '%';
+
+  const on = isMusicOnByVol(vol01);
+  musicToggleBtn.textContent = on ? 'ON' : 'OFF';
+  musicToggleBtn.classList.toggle('off', !on);
+}
+
+function openConfirmModal(onYes, onNo){
+  if(!confirmModal) return;
+  confirmModal.classList.add('show');
+
+  const cleanup = ()=>{
+    confirmModal.classList.remove('show');
+    btnConfirmYes && btnConfirmYes.removeEventListener('click', yesHandler);
+    btnConfirmNo  && btnConfirmNo.removeEventListener('click', noHandler);
+    confirmBackdrop && confirmBackdrop.removeEventListener('click', noHandler);
+  };
+
+  const yesHandler = ()=>{ cleanup(); onYes && onYes(); };
+  const noHandler  = ()=>{ cleanup(); onNo  && onNo();  };
+
+  btnConfirmYes && btnConfirmYes.addEventListener('click', yesHandler);
+  btnConfirmNo  && btnConfirmNo.addEventListener('click', noHandler);
+  confirmBackdrop && confirmBackdrop.addEventListener('click', noHandler);
+}
+
+function openAlertModal(message, onOk){
+  if(!alertModal) return;
+  if(alertMsgEl) alertMsgEl.textContent = message || 'Notice';
+  alertModal.classList.add('show');
+
+  const cleanup = ()=>{
+    alertModal.classList.remove('show');
+    btnAlertOk && btnAlertOk.removeEventListener('click', okHandler);
+    alertBackdrop && alertBackdrop.removeEventListener('click', okHandler);
+  };
+
+  const okHandler = ()=>{ cleanup(); onOk && onOk(); };
+
+  btnAlertOk && btnAlertOk.addEventListener('click', okHandler);
+  alertBackdrop && alertBackdrop.addEventListener('click', okHandler);
+}
+
+function openOptions(){
+  if(!optionsModal) return;
+  snapshotOptions();
+  syncOptionsUI();
+  optionsModal.classList.add('show');
+}
+function closeOptionsWithPrompt(){
+  if(!optionsModal) return;
+
+  if(!optionsDirty){
+    optionsModal.classList.remove('show');
+    return;
+  }
+
+  openConfirmModal(
+    ()=>{ optionsDirty=false; optionsSnapshot=null; optionsModal.classList.remove('show'); },
+    ()=>{ if(optionsSnapshot && typeof setTitleMusicVolume==='function') setTitleMusicVolume(optionsSnapshot.vol);
+          optionsDirty=false; optionsSnapshot=null; optionsModal.classList.remove('show'); }
+  );
+}
+
+if(optionsBackdrop) optionsBackdrop.addEventListener('click', closeOptionsWithPrompt);
+if(btnOptionsClose) btnOptionsClose.addEventListener('click', closeOptionsWithPrompt);
+
+if(musicVol){
+  musicVol.addEventListener('input', ()=>{
+    const pct = clamp(parseInt(musicVol.value,10) || 0, 0, 100);
+    if(musicVolLabel) musicVolLabel.textContent = pct + '%';
+    if(typeof setTitleMusicVolume === 'function'){
+      setTitleMusicVolume(pct/100);
+      optionsDirty = true;
+      syncOptionsUI();
+    }
+  });
+}
+if(musicToggleBtn){
+  musicToggleBtn.addEventListener('click', ()=>{
+    if(typeof setTitleMusicEnabled !== 'function' || typeof getTitleMusicVolume !== 'function') return;
+    const vol01 = getVolSafe();
+    setTitleMusicEnabled(!isMusicOnByVol(vol01));
+    optionsDirty = true;
+    syncOptionsUI();
+  });
+}
+
+/* ---------------------------------------------------------------------------
+Save slot state + panels
+--------------------------------------------------------------------------- */
+let selectedSlot = null;
+let currentPanel = 'slots';
+let previousPanel = 'slots';
+
 function slotKey(i){ return `AAB_SLOT_${i}`; }
 function saveKey(i){ return `AAB_SAVE_${i}`; }
 
@@ -1189,66 +1189,83 @@ function slotHasSave(i){
   return !!localStorage.getItem(saveKey(i));
 }
 
-/* Panel control */
 function hideAllPanels(){
-  panelSlots.classList.remove('show');
-  panelName.classList.remove('show');
-  panelActions.classList.remove('show');
-  panelConfirm.classList.remove('show');
+  panelSlots && panelSlots.classList.remove('show');
+  panelName && panelName.classList.remove('show');
+  panelActions && panelActions.classList.remove('show');
+  panelConfirm && panelConfirm.classList.remove('show');
 }
 function showPanel(which){
   hideAllPanels();
   currentPanel = which;
 
-  if(which === 'slots')   panelSlots.classList.add('show');
-  if(which === 'name')    panelName.classList.add('show');
-  if(which === 'actions') panelActions.classList.add('show');
-  if(which === 'confirm') panelConfirm.classList.add('show');
+  if(which === 'slots')   panelSlots && panelSlots.classList.add('show');
+  if(which === 'name')    panelName && panelName.classList.add('show');
+  if(which === 'actions') panelActions && panelActions.classList.add('show');
+  if(which === 'confirm') panelConfirm && panelConfirm.classList.add('show');
 }
-function goBack(){
-  showPanel(previousPanel);
+function goBack(){ showPanel(previousPanel); }
+
+/* HARD close: guarantees the modal can never keep blocking title taps */
+function hardHideSlotModal(){
+  if(!slotModal) return;
+  slotModal.classList.remove('show');
+  slotModal.style.pointerEvents = 'none';
+  slotModal.style.visibility = 'hidden';
+  slotModal.style.opacity = '0';
+}
+function hardShowSlotModal(){
+  if(!slotModal) return;
+  slotModal.style.pointerEvents = '';
+  slotModal.style.visibility = '';
+  slotModal.style.opacity = '';
+  slotModal.classList.add('show');
 }
 
-/* Open / Close modal */
 function openSlots(){
   selectedSlot = null;
   previousPanel = 'slots';
   showPanel('slots');
   rebuildSlotList();
-  slotModal.classList.add('show');
+  hardShowSlotModal();
 }
 function closeSlots(){
-  slotModal.classList.remove('show');
+  // reset state FIRST
   selectedSlot = null;
   previousPanel = 'slots';
   currentPanel = 'slots';
-  nameInput.value = '';
+  if(nameInput) nameInput.value = '';
+
+  // then hard-hide the modal so it can’t “ghost block” taps
+  hardHideSlotModal();
 }
 
-/* Build slot buttons */
 function rebuildSlotList(){
+  if(!slotList) return;
   slotList.innerHTML = '';
 
   for(let i=1;i<=SLOT_COUNT;i++){
-    const nm = getSlotName(i);
+    const nm  = getSlotName(i);
     const has = slotHasSave(i);
 
     const btn = document.createElement('button');
     btn.className = 'menu-btn';
     btn.textContent = nm ? nm : `${i} ---NEW GAME---`;
 
-    btn.addEventListener('click', ()=>{
+    bindTap(btn, ()=>{
       selectedSlot = i;
 
       if(nm && has){
-        actionTitle.textContent = nm;
+        if(actionTitle) actionTitle.textContent = nm;
         previousPanel = 'slots';
         showPanel('actions');
       }else{
         previousPanel = 'slots';
         showPanel('name');
-        nameInput.value = '';
-        setTimeout(()=>nameInput.focus(), 50);
+        if(nameInput){
+          nameInput.value = '';
+          setTimeout(()=>nameInput.focus(), 50);
+        }
       }
     });
 
@@ -1256,14 +1273,14 @@ function rebuildSlotList(){
   }
 }
 
-/* Cinematic transition into game (per spec) */
+/* ---------------------------------------------------------------------------
+Cinematic transition into game (unchanged)
+--------------------------------------------------------------------------- */
 function cinematicIntoGame(){
   clearTitleTimers();
 
-  // 1) play confirm sound (if available)
   try{ if(typeof playUiConfirm === 'function') playUiConfirm(); }catch(e){}
 
-  // 2) Close any open modals (they fade now)
   closeSlots();
   if(optionsModal && optionsModal.classList.contains('show')){
     optionsDirty = false;
@@ -1273,73 +1290,83 @@ function cinematicIntoGame(){
   if(confirmModal && confirmModal.classList.contains('show')) confirmModal.classList.remove('show');
   if(alertModal && alertModal.classList.contains('show')) alertModal.classList.remove('show');
 
-  // 3) Ensure we are showing TITLE BACKGROUND ONLY (no overlays)
-  mainMenu.classList.remove('show');
-  titleScreen.style.display = 'flex';
-  titleScreen.classList.remove('hard-off');
-  titleScreen.classList.add('show'); // background visible
+  mainMenu && mainMenu.classList.remove('show');
+  if(titleScreen){
+    titleScreen.style.display = 'flex';
+    titleScreen.classList.remove('hard-off');
+    titleScreen.classList.add('show');
+  }
 
-  // 4) After 2s, fade to black + fade out title music
   const HOLD_ON_TITLE_MS = 2000;
   const FADE_TO_BLACK_MS = 1100;
 
   setTimeout(()=>{
-    curtain.style.transition = `opacity ${FADE_TO_BLACK_MS}ms cubic-bezier(0.2,0,0.2,1)`;
-    curtain.classList.remove('off'); // fade to black
+    if(curtain){
+      curtain.style.transition = `opacity ${FADE_TO_BLACK_MS}ms cubic-bezier(0.2,0,0.2,1)`;
+      curtain.classList.remove('off');
+    }
 
     if(typeof fadeOutTitleMusic === 'function') fadeOutTitleMusic(FADE_TO_BLACK_MS);
 
-    // 5) Once black, kill title visuals + stop music hard
     setTimeout(()=>{
-      // hard kill title overlay so it cannot bleed into gameplay
-      titleScreen.classList.add('hard-off');
-      titleScreen.style.display = 'none';
+      if(titleScreen){
+        titleScreen.classList.add('hard-off');
+        titleScreen.style.display = 'none';
+      }
 
       try{ if(typeof stopTitleMusic === 'function') stopTitleMusic(); }catch(e){}
 
-      // 6) Start gameplay/world generation; when ready, fade in from black
       let maybePromise = null;
       try{ maybePromise = startGameplay(); }catch(e){ maybePromise = null; }
 
       Promise.resolve(maybePromise).then(()=>{
-        curtain.style.transition = 'opacity 1400ms cubic-bezier(0.2,0,0.2,1)';
-        curtain.classList.add('off'); // reveal gameplay from black
+        if(curtain){
+          curtain.style.transition = 'opacity 1400ms cubic-bezier(0.2,0,0.2,1)';
+          curtain.classList.add('off');
+        }
       });
+
     }, FADE_TO_BLACK_MS + 40);
+
   }, HOLD_ON_TITLE_MS);
 }
 
-/* NAME panel actions */
-btnNameConfirm.addEventListener('click', ()=>{
+/* ---------------------------------------------------------------------------
+Wire up buttons (tap-safe)
+--------------------------------------------------------------------------- */
+bindTap(btnNew, openSlots);
+bindTap(btnOptions, openOptions);
+
+bindTap(btnSlotsClose, closeSlots);
+
+if(slotBackdrop){
+  bindTap(slotBackdrop, ()=>{
+    if(currentPanel === 'slots') closeSlots();
+    else goBack();
+  });
+}
+
+bindTap(btnNameCancel, ()=>{
+  if(nameInput) nameInput.value = '';
+  goBack();
+});
+
+bindTap(btnNameConfirm, ()=>{
   if(!selectedSlot) return;
 
-  const name = (nameInput.value || '').trim();
+  const name = (nameInput ? (nameInput.value||'') : '').trim();
   if(!name){
     openAlertModal('Please enter a name');
     return;
   }
 
-  localStorage.setItem(slotKey(selectedSlot), JSON.stringify({
-    name,
-    createdAt: Date.now()
-  }));
-
-  localStorage.setItem(saveKey(selectedSlot), JSON.stringify({
-    v: 1,
-    name,
-    createdAt: Date.now()
-  }));
+  localStorage.setItem(slotKey(selectedSlot), JSON.stringify({ name, createdAt: Date.now() }));
+  localStorage.setItem(saveKey(selectedSlot), JSON.stringify({ v:1, name, createdAt: Date.now() }));
 
   cinematicIntoGame();
 });
 
-btnNameCancel.addEventListener('click', ()=>{
-  nameInput.value = '';
-  goBack();
-});
-
-/* ACTIONS panel actions */
-btnLoadSlot.addEventListener('click', ()=>{
+bindTap(btnLoadSlot, ()=>{
   if(!selectedSlot) return;
   const raw = localStorage.getItem(saveKey(selectedSlot));
   if(!raw){
@@ -1349,69 +1376,57 @@ btnLoadSlot.addEventListener('click', ()=>{
     });
     return;
   }
-
   cinematicIntoGame();
 });
 
-btnDeleteSlot.addEventListener('click', ()=>{
+bindTap(btnDeleteSlot, ()=>{
   previousPanel = 'actions';
   showPanel('confirm');
 });
 
-btnActionsClose.addEventListener('click', ()=>{
+bindTap(btnActionsClose, ()=>{
   rebuildSlotList();
   showPanel('slots');
 });
 
-/* CONFIRM panel actions */
-btnDeleteYes.addEventListener('click', ()=>{
+bindTap(btnDeleteYes, ()=>{
   if(!selectedSlot) return;
 
   localStorage.removeItem(saveKey(selectedSlot));
   localStorage.removeItem(slotKey(selectedSlot));
 
   selectedSlot = null;
-
   rebuildSlotList();
   showPanel('slots');
 });
 
-btnDeleteNo.addEventListener('click', ()=>goBack());
-btnConfirmClose.addEventListener('click', ()=>goBack());
+bindTap(btnDeleteNo, ()=>goBack());
+bindTap(btnConfirmClose, ()=>goBack());
 
-slotBackdrop.addEventListener('click', ()=>{
-  if(currentPanel === 'slots') closeSlots();
-  else goBack();
-});
-
-btnSlotsClose.addEventListener('click', closeSlots);
-
-btnNew.addEventListener('click', openSlots);
-
-if(btnOptions) btnOptions.addEventListener('click', openOptions);
-
-/* Existing title sequence (menu delay starts when title fade begins) */
+/* Title sequence (unchanged) */
 function runTitleSequence(){
   clearTitleTimers();
 
   const BLACK_HOLD_MS = 2000;
 
-  curtain.classList.remove('off');
+  if(curtain) curtain.classList.remove('off');
 
-  titleScreen.style.display = 'flex';
-  titleScreen.classList.remove('hard-off');
-
-  titleScreen.classList.remove('show');
-  mainMenu.classList.remove('show');
+  if(titleScreen){
+    titleScreen.style.display = 'flex';
+    titleScreen.classList.remove('hard-off');
+    titleScreen.classList.remove('show');
+  }
+  if(mainMenu) mainMenu.classList.remove('show');
 
   const t1 = setTimeout(()=>{
-    titleScreen.classList.add('show');
-    curtain.classList.add('off');
-    mainMenu.classList.add('show');
+    if(titleScreen) titleScreen.classList.add('show');
+    if(curtain) curtain.classList.add('off');
+    if(mainMenu) mainMenu.classList.add('show');
   }, BLACK_HOLD_MS);
 
   titleTimers.push(t1);
 }
+
 
 
 
