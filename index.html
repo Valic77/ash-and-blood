@@ -26,6 +26,10 @@
   /* Menu */
   --menu-delay-ms: 4050ms;    /* only used if you add transition-delay */
   --menu-in-ms: 4000ms;
+
+  /* UI */
+  --ui-gutter: 28px;          /* ✅ visible space from screen edge */
+  --ui-fade-ms: 220ms;        /* ✅ menu/modal fade speed */
 }
 
 html,body{
@@ -151,8 +155,19 @@ canvas.show{ opacity:1; }
   color:#e9f0ff;font-weight:800;
   letter-spacing:.08em;text-transform:uppercase;
   backdrop-filter:blur(6px);
+
+  /* ✅ tactile feedback */
+  transition: transform 90ms ease, opacity 120ms ease, filter 120ms ease, border-color 120ms ease;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
 }
-.menu-btn:active{transform:scale(.99);opacity:.92;}
+
+.menu-btn:active{
+  transform:scale(.985);
+  opacity:.92;
+  filter: brightness(1.12);
+  border-color: rgba(255,255,255,.26);
+}
 
 
 
@@ -180,13 +195,22 @@ canvas.show{ opacity:1; }
   position:fixed;
   inset:0;
   z-index:18000;
-  display:none;
+
+  /* ✅ fade instead of blink */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1);
 
   /* ✅ forces visible gutter on all phones */
-  padding:18px;
+  padding:var(--ui-gutter);
   box-sizing:border-box;
 }
-#slotModal.show{ display:block; }
+#slotModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #slotModal .slot-backdrop{
   position:absolute; inset:0;
@@ -200,8 +224,8 @@ canvas.show{ opacity:1; }
   left:50%; top:50%;
   transform:translate(-50%,-50%);
 
-  /* ✅ width is now inside padded modal */
-  width:min(560px, 100%);
+  /* ✅ never touches edges */
+  width:min(560px, calc(100vw - (var(--ui-gutter) * 2)));
   box-sizing:border-box;
 
   padding:18px;
@@ -285,13 +309,22 @@ canvas.show{ opacity:1; }
   position:fixed;
   inset:0;
   z-index:19000;
-  display:none;
+
+  /* ✅ fade instead of blink */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1);
 
   /* ✅ forces visible gutter on all phones */
-  padding:18px;
+  padding:var(--ui-gutter);
   box-sizing:border-box;
 }
-#optionsModal.show{ display:block; }
+#optionsModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #optionsModal .options-backdrop{
   position:absolute; inset:0;
@@ -304,8 +337,8 @@ canvas.show{ opacity:1; }
   left:50%; top:50%;
   transform:translate(-50%,-50%);
 
-  /* ✅ width is now inside padded modal */
-  width:min(560px, 100%);
+  /* ✅ never touches edges */
+  width:min(560px, calc(100vw - (var(--ui-gutter) * 2)));
   box-sizing:border-box;
 
   padding:18px;
@@ -356,13 +389,24 @@ canvas.show{ opacity:1; }
   position:fixed;
   inset:0;
   z-index:26000;
-  display:none;          /* hidden by default */
+
+  /* ✅ fade instead of blink */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1);
+
+  display:flex;
   align-items:center;
   justify-content:center;
-  padding:18px;
+  padding:var(--ui-gutter);
 }
 
-#loadModal.show{ display:flex; }
+#loadModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #loadModal .backdrop{
   position:absolute;
@@ -374,8 +418,8 @@ canvas.show{ opacity:1; }
   position:relative;
   z-index:1;
 
-  /* ✅ more gap from screen edge */
-  width:min(640px, calc(100vw - 28px));
+  /* ✅ never touches edges */
+  width:min(640px, calc(100vw - (var(--ui-gutter) * 2)));
 
   max-height:min(70vh, 620px);
   overflow:auto;
@@ -410,9 +454,18 @@ canvas.show{ opacity:1; }
   color:#e9f0ff;
   font-weight:800;
   letter-spacing:.04em;
+
+  transition: transform 90ms ease, opacity 120ms ease, filter 120ms ease, border-color 120ms ease;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.save-item:active{ transform:scale(.99); opacity:.92; }
+.save-item:active{
+  transform:scale(.985);
+  opacity:.92;
+  filter: brightness(1.12);
+  border-color: rgba(255,255,255,.26);
+}
 
 .save-empty{
   padding:12px;
@@ -434,13 +487,22 @@ canvas.show{ opacity:1; }
   position:fixed;
   inset:0;
   z-index:20000;
-  display:none;
+
+  /* ✅ fade instead of blink */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1);
 
   /* ✅ forces visible gutter on all phones */
-  padding:18px;
+  padding:var(--ui-gutter);
   box-sizing:border-box;
 }
-#confirmModal.show{ display:block; }
+#confirmModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #confirmModal .confirm-backdrop{
   position:absolute;
@@ -455,7 +517,7 @@ canvas.show{ opacity:1; }
   top:50%;
   transform:translate(-50%,-50%);
 
-  width:min(560px, 100%);
+  width:min(560px, calc(100vw - (var(--ui-gutter) * 2)));
   box-sizing:border-box;
 
   padding:18px;
@@ -480,12 +542,21 @@ canvas.show{ opacity:1; }
   position:fixed;
   inset:0;
   z-index:21000;
-  display:none;
 
-  padding:18px;
+  /* ✅ fade instead of blink */
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition: opacity var(--ui-fade-ms) cubic-bezier(0.2,0,0.2,1);
+
+  padding:var(--ui-gutter);
   box-sizing:border-box;
 }
-#alertModal.show{ display:block; }
+#alertModal.show{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
 
 #alertModal .alert-backdrop{
   position:absolute;
@@ -500,7 +571,7 @@ canvas.show{ opacity:1; }
   top:50%;
   transform:translate(-50%,-50%);
 
-  width:min(560px, 100%);
+  width:min(560px, calc(100vw - (var(--ui-gutter) * 2)));
   box-sizing:border-box;
 
   padding:18px;
@@ -517,6 +588,7 @@ canvas.show{ opacity:1; }
   margin:10px 0 14px 0;
   opacity:.95;
 }
+
 
 
 </style>
@@ -641,7 +713,6 @@ canvas.show{ opacity:1; }
 
   <div class="confirm-panel">
     <div class="slot-title">APPLY CHANGES?</div>
-    <div id="confirmMsg" class="confirm-msg">Apply changes?</div>
 
     <div class="confirm-row">
       <button id="btnConfirmNo" class="menu-btn">NO</button>
@@ -649,6 +720,7 @@ canvas.show{ opacity:1; }
     </div>
   </div>
 </div>
+
 
 <!-- ---------------------------------------------------------------------------
 [H005] ALERT MODAL (replaces browser alert())
@@ -880,7 +952,7 @@ const confirmBackdrop = confirmModal ? confirmModal.querySelector('.confirm-back
 const btnConfirmYes   = document.getElementById('btnConfirmYes');
 const btnConfirmNo    = document.getElementById('btnConfirmNo');
 
-/* ALERT MODAL (NEW) */
+/* ALERT MODAL */
 const alertModal      = document.getElementById('alertModal');
 const alertBackdrop   = alertModal ? alertModal.querySelector('.alert-backdrop') : null;
 const alertMsgEl      = document.getElementById('alertMsg');
@@ -978,7 +1050,7 @@ function closeOptionsWithPrompt(){
   if(!optionsModal) return;
 
   if(!optionsDirty){
-    optionsModal.classList.remove('show');
+    optionsModal.classList.remove('show'); // ✅ fades now
     return;
   }
 
@@ -987,7 +1059,7 @@ function closeOptionsWithPrompt(){
     ()=>{
       optionsDirty = false;
       optionsSnapshot = null;
-      optionsModal.classList.remove('show');
+      optionsModal.classList.remove('show'); // ✅ fades now
     },
     // NO: revert snapshot
     ()=>{
@@ -996,7 +1068,7 @@ function closeOptionsWithPrompt(){
       }
       optionsDirty = false;
       optionsSnapshot = null;
-      optionsModal.classList.remove('show');
+      optionsModal.classList.remove('show'); // ✅ fades now
     }
   );
 }
@@ -1120,10 +1192,10 @@ function openSlots(){
   previousPanel = 'slots';
   showPanel('slots');
   rebuildSlotList();
-  slotModal.classList.add('show');
+  slotModal.classList.add('show'); // ✅ fades in now
 }
 function closeSlots(){
-  slotModal.classList.remove('show');
+  slotModal.classList.remove('show'); // ✅ fades out now
   selectedSlot = null;
   previousPanel = 'slots';
   currentPanel = 'slots';
@@ -1165,42 +1237,55 @@ function rebuildSlotList(){
 function cinematicIntoGame(){
   clearTitleTimers();
 
-  curtain.style.transition = 'opacity 900ms linear';
-  curtain.classList.remove('off');
+  // ✅ confirmation sound BEFORE fade-to-black
+  if(typeof playUiConfirm === 'function') playUiConfirm();
 
-  fadeOutMenuMusic(900);
-
-  closeSlots();
-  if(optionsModal && optionsModal.classList.contains('show')){
-    optionsDirty = false;
-    optionsSnapshot = null;
-    optionsModal.classList.remove('show');
-  }
-
-  mainMenu.classList.remove('show');
-  titleScreen.classList.remove('show');
-
-  titleScreen.classList.add('hard-off');
-  titleScreen.style.display = 'none';
-
-  const MIN_BLACK_MS = 2000;
-  const FADE_TO_BLACK_MS = 900;
-  const blackAt = performance.now() + FADE_TO_BLACK_MS;
+  // small delay so the confirm sound is heard clearly
+  const CONFIRM_LEAD_MS = 180;
 
   setTimeout(()=>{
-    let maybePromise = null;
-    try{ maybePromise = startGameplay(); }catch(e){ maybePromise = null; }
+    curtain.style.transition = 'opacity 900ms linear';
+    curtain.classList.remove('off');
 
-    const waitMinBlack = new Promise(res=>{
-      const remaining = Math.max(0, (blackAt + MIN_BLACK_MS) - performance.now());
-      setTimeout(res, remaining);
-    });
+    fadeOutMenuMusic(900);
 
-    Promise.resolve(maybePromise).then(()=>waitMinBlack).then(()=>{
-      curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
-      curtain.classList.add('off');
-    });
-  }, FADE_TO_BLACK_MS + 50);
+    closeSlots();
+    if(optionsModal && optionsModal.classList.contains('show')){
+      optionsDirty = false;
+      optionsSnapshot = null;
+      optionsModal.classList.remove('show'); // ✅ fades out now
+    }
+
+    // Start fading title/menu out (no snap)
+    mainMenu.classList.remove('show');
+    titleScreen.classList.remove('show');
+
+    // ✅ after a short fade window, hard-kill overlay to prevent bleed-through
+    setTimeout(()=>{
+      titleScreen.classList.add('hard-off');
+      titleScreen.style.display = 'none';
+    }, 260);
+
+    const MIN_BLACK_MS = 2000;
+    const FADE_TO_BLACK_MS = 900;
+    const blackAt = performance.now() + FADE_TO_BLACK_MS;
+
+    setTimeout(()=>{
+      let maybePromise = null;
+      try{ maybePromise = startGameplay(); }catch(e){ maybePromise = null; }
+
+      const waitMinBlack = new Promise(res=>{
+        const remaining = Math.max(0, (blackAt + MIN_BLACK_MS) - performance.now());
+        setTimeout(res, remaining);
+      });
+
+      Promise.resolve(maybePromise).then(()=>waitMinBlack).then(()=>{
+        curtain.style.transition = 'opacity 1200ms cubic-bezier(0.2,0,0.2,1)';
+        curtain.classList.add('off');
+      });
+    }, FADE_TO_BLACK_MS + 50);
+
+  }, CONFIRM_LEAD_MS);
 }
 
 /* NAME panel actions */
@@ -1306,6 +1391,9 @@ function runTitleSequence(){
 
   titleTimers.push(t1);
 }
+
+
+
 
 /* ---------------------------------------------------------------------------
 [010] GAME LOOP (disabled until later phases)
@@ -1569,6 +1657,71 @@ if(bootBtn){
   bootBtn.addEventListener('click', startMenuSequence, { once:true });
 }
 
+
+
+/* ---------------------------------------------------------------------------
+[012] UI SFX: button click + confirm (no external files)
+--------------------------------------------------------------------------- */
+function playUiClick(){
+  if(!audioCtx) return;
+  try{
+    const now = audioCtx.currentTime;
+
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+
+    o.type = 'square';
+    o.frequency.setValueAtTime(900, now);
+
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.10, now + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.060);
+
+    o.connect(g);
+    g.connect(audioCtx.destination);
+
+    o.start(now);
+    o.stop(now + 0.065);
+  }catch(e){}
+}
+
+function playUiConfirm(){
+  if(!audioCtx) return;
+  try{
+    const now = audioCtx.currentTime;
+
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+
+    o.type = 'sine';
+    o.frequency.setValueAtTime(520, now);
+    o.frequency.exponentialRampToValueAtTime(740, now + 0.10);
+
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.14, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+    o.connect(g);
+    g.connect(audioCtx.destination);
+
+    o.start(now);
+    o.stop(now + 0.15);
+  }catch(e){}
+}
+
+/* Global UI click hook (buttons + tap targets)
+   - runs in capture phase so it still plays even if the click handler throws
+   - skips Boot button (that one is “special” and already a gesture)
+*/
+document.addEventListener('click', (e)=>{
+  const el = e.target && e.target.closest
+    ? e.target.closest('button, .menu-btn, .save-item, #modeBtn, #fireBtn')
+    : null;
+  if(!el) return;
+  if(el.id === 'bootStartBtn') return;
+
+  playUiClick();
+}, true);
 
 
 
